@@ -31,6 +31,9 @@ function ProfileForm({ formData, onChange, mode }) {
     loadProfileInfo();
   }, []);
 
+  /**
+   * Load existing profile information for validation
+   */
   const loadProfileInfo = async () => {
     try {
       const profiles = await window.electronAPI.loadProfiles();
@@ -39,7 +42,7 @@ function ProfileForm({ formData, onChange, mode }) {
         setProfileCount(profiles.data.length);
       }
     } catch (error) {
-      console.error('Failed to load profile info:', error);
+      // Profile info loading failure handled - validation will still work
     }
   };
 

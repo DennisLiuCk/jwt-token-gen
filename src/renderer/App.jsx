@@ -251,7 +251,7 @@ function AppContent() {
     } catch (err) {
       setError(err.message);
       showNotification(err.message, 'error');
-      console.error('Token generation error:', err);
+      // Token generation error handled and displayed to user
     } finally {
       setIsGenerating(false);
     }

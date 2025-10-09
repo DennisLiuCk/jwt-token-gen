@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "description": "JWT Token Generator for Windows",
   "main": "dist/main/main.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
     "start": "electron .",
     "dev": "webpack serve --mode development --config webpack.renderer.config.js",
@@ -34,7 +31,6 @@
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
-    "electron": "^38.2.2",
     "electron-store": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "monaco-editor": "^0.54.0",
@@ -52,6 +48,7 @@
     "@testing-library/react": "^16.3.0",
     "babel-loader": "^10.0.0",
     "css-loader": "^7.1.2",
+    "electron": "^38.2.2",
     "electron-builder": "^26.0.12",
     "eslint": "^9.37.0",
     "eslint-plugin-react": "^7.37.5",

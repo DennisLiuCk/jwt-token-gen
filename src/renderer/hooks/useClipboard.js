@@ -2,12 +2,20 @@ import { useState } from 'react';
 
 /**
  * Custom hook for clipboard operations
- * @returns {Object} Clipboard state and copy function
+ * @returns {Object} Object containing:
+ *   - copyToClipboard: Function to copy text to clipboard
+ *   - copied: Boolean indicating if text was recently copied
+ *   - error: Error message if copy operation failed
  */
 export function useClipboard() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
 
+  /**
+   * Copy text to clipboard using Clipboard API or fallback
+   * @param {string} text - The text to copy
+   * @returns {Promise<boolean>} True if successful, false otherwise
+   */
   async function copyToClipboard(text) {
     try {
       setError(null);
@@ -44,7 +52,7 @@ export function useClipboard() {
       return true;
     } catch (err) {
       setError(err.message);
-      console.error('Clipboard error:', err);
+      // Clipboard error stored in state for display
       return false;
     }
   }

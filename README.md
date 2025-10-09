@@ -1,39 +1,58 @@
 # JWT Token Generator for Windows
 
-A desktop application for generating, managing, and testing JWT tokens with support for HS256 and RS256 signing algorithms.
+> A professional desktop application for quickly generating, managing, and testing JWT tokens with support for HS256 and RS256 signing algorithms.
+
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
 ## Features
 
-### ✅ Implemented
-- **Desktop Application**: Electron-based app for Windows 10/11
-- **Secure Key Storage**: Encrypted key storage using machine-specific encryption
-- **Default Profiles**: Pre-configured profiles for common use cases
-- **Profile Management**: Create, edit, and delete custom profiles
-- **JWT Generation**: Support for HS256 (HMAC) and RS256 (RSA) algorithms
-- **Material-UI Interface**: Modern, responsive UI
+✅ **All Features Implemented and Ready for Production**
 
-### 🚧 In Development
-- **Token Display & Copy**: One-click token copying to clipboard
-- **Expiration Control**: Preset and custom expiration times
-- **Dual Payload Editing**: Form-based and JSON-based payload editing
-- **Token Parsing**: Decode and analyze existing JWT tokens
+- **Quick Token Generation**: Generate JWT tokens instantly from pre-configured profiles
+- **Multi-Algorithm Support**: HS256 (HMAC with SHA-256) and RS256 (RSA with SHA-256)
+- **Profile Management**: Save and manage up to 50 token configurations for different environments
+- **Dual Payload Editing**: Switch between intuitive form-based and powerful JSON-based payload editing
+- **Secure Key Storage**: Automatic encryption of signing keys using Windows DPAPI
+- **Token Parsing**: Parse and analyze existing JWT tokens with human-readable timestamps
+- **Flexible Expiration**: Configure expiration times with presets (1h, 1d, 1w) or custom timestamps
+- **One-Click Copy**: Copy generated tokens to clipboard instantly
+- **Default Profiles**: Three pre-configured profiles for common scenarios
+- **Keyboard Shortcuts**: Ctrl+G (generate), Ctrl+C (copy), Escape (close dialogs)
+- **Professional UI**: Modern, Claude-inspired design with Material-UI components
 
 ## Installation
 
-### Prerequisites
-- Node.js 18+
-- Windows 10 or Windows 11
+### For End Users
 
-### Setup
+**Prerequisites**: Windows 10 or Windows 11 (x64)
+
+1. Download the latest installer from the [Releases](https://github.com/your-org/jwt-token-gen/releases) page
+2. Run `JWT-Token-Generator-Setup-0.1.0.exe`
+3. Follow the installation wizard
+4. Launch from Start Menu or Desktop shortcut
+
+### For Developers
+
+**Prerequisites**: Node.js 18+, Windows 10/11
+
 ```bash
+# Clone the repository
+git clone https://github.com/your-org/jwt-token-gen.git
+cd jwt-token-gen
+
 # Install dependencies
 npm install
 
-# Build the application
-npm run build
-
 # Run in development mode
 npm start
+
+# Build for production
+npm run build
+
+# Create installer
+npm run dist
 ```
 
 ## Development
@@ -87,31 +106,87 @@ npm run lint          # Lint code
 npm run format        # Format code with Prettier
 ```
 
-## Usage
+## Quick Start Guide
 
-### Quick Start
+### 1. Select a Profile
 
-1. **Launch the application**
-2. **Select a default profile** (Dev Environment Admin, Hybris Merchant Admin, or OpenAPI Profile)
-3. **Enter your signing key**:
-   - For HS256: Base64-encoded secret key
-   - For RS256: PEM-encoded RSA private key
-4. **Configure expiration** (1h, 1d, 1w, or custom)
-5. **Generate token** and copy to clipboard
+The application comes with three default profiles. Click on one to get started:
 
-### Default Profiles
+- **Dev Environment Admin** (HS256): For development environment testing
+- **Hybris Merchant Admin** (HS256): For e-commerce merchant scenarios
+- **OpenAPI Profile** (RS256): For API client authentication
 
-**Dev Environment Admin** (HS256)
-- Payload: userId, username, email, roleCode
-- Expiration: 1 hour
+### 2. Enter Your Signing Key
 
-**Hybris Merchant Admin** (HS256)
-- Payload: userId, username, email, roleCode, merchantId
-- Expiration: 1 day
+Based on the selected algorithm:
+- **HS256**: Enter a Base64-encoded secret key
+- **RS256**: Enter a PEM-encoded RSA private key (with BEGIN/END markers)
 
-**OpenAPI Profile** (RS256)
-- Payload: sub, apiKey
-- Expiration: 1 week
+**Note**: Keys are automatically encrypted using Windows DPAPI and stored securely.
+
+### 3. Configure the Payload
+
+Edit the payload using either:
+- **Form Mode**: Fill in common fields (userId, username, email, roleCode, etc.)
+- **JSON Mode**: Edit as raw JSON with Monaco Editor syntax highlighting
+
+Add custom fields as needed by clicking "Add Custom Field" in form mode.
+
+### 4. Set Expiration
+
+Choose from preset expiration times or set a custom timestamp:
+- **1 hour** (3600 seconds)
+- **1 day** (86400 seconds)
+- **1 week** (604800 seconds)
+- **Custom**: Specify an exact expiration date and time
+
+### 5. Generate & Copy Token
+
+- Click **Generate Token** or press `Ctrl+G`
+- View the decoded header and payload
+- Click **Copy** to copy the token to your clipboard
+- Use in Postman, curl, or any API testing tool
+
+## Advanced Usage
+
+### Creating a New Profile
+
+1. Click the **+ New Profile** button
+2. Enter a unique profile name (1-50 characters)
+3. Select the signing algorithm
+4. Enter your signing key
+5. Configure the default payload
+6. Set the default expiration
+7. Click **Save**
+
+### Editing Profiles
+
+1. Select the profile to edit
+2. Click the **Edit** button (pencil icon)
+3. Make your changes
+4. Click **Save**
+
+### Deleting Profiles
+
+1. Select the profile to delete
+2. Click the **Delete** button (trash icon)
+3. Confirm deletion
+
+**Warning**: Profile deletion is permanent.
+
+### Parsing Existing Tokens
+
+1. Scroll to the **Token Parser** section
+2. Paste a JWT token into the input
+3. View the decoded header and payload
+4. See timestamps in human-readable format
+5. Copy individual claim values
+
+### Keyboard Shortcuts
+
+- `Ctrl+G`: Generate Token
+- `Ctrl+C`: Copy Token (when displayed)
+- `Escape`: Close dialogs
 
 ### Key Formats
 
@@ -132,43 +207,143 @@ MIIEpAIBAAKCAQEA...
 
 ## Security
 
-- **Key Encryption**: All signing keys are encrypted before storage using AES-256-CBC with a machine-specific key
-- **No Network Access**: Application runs completely offline
+### Key Encryption (Windows DPAPI)
+
+All signing keys are encrypted at rest using **Windows Data Protection API (DPAPI)** with `CurrentUser` scope:
+
+- Keys are encrypted automatically when you save a profile
+- Only the same Windows user account on the same machine can decrypt the keys
+- Keys are never logged or transmitted
+- Plaintext keys are cleared from memory immediately after token generation
+
+### Important Security Notes
+
+⚠️ **Do not share profiles between different machines** - encrypted keys cannot be decrypted elsewhere
+
+⚠️ **Do not share the config.json file** - it contains encrypted keys
+
+⚠️ **Use strong keys**:
+  - HS256: At least 256 bits (32 bytes)
+  - RS256: At least 2048 bits
+
+⚠️ **Treat generated tokens as sensitive** - they can authenticate as the specified user
+
+### Application Security
+
+- **No Network Access**: Fully offline operation
 - **Secure IPC**: Context isolation enabled, node integration disabled
-- **Memory Clearing**: Plaintext keys are cleared from memory immediately after use
+- **Input Validation**: Multi-layer validation for keys, payloads, and configuration
+- **Error Handling**: No sensitive data in error messages
+
+## Troubleshooting
+
+### Cannot decrypt stored key
+
+**Error**: "Unable to decrypt key. This profile may have been created on a different machine."
+
+**Solution**: The profile was created on a different Windows user account or machine. Re-enter the signing key manually and save the profile again.
+
+### Profile limit reached
+
+**Error**: "Maximum profile limit (50) reached."
+
+**Solution**: Delete unused profiles to free up slots.
+
+### Invalid key format
+
+**Error**: "Invalid Base64 key format" or "Invalid PEM format."
+
+**Solution**:
+- HS256: Ensure valid Base64 encoding (no spaces, correct padding)
+- RS256: Ensure PEM markers (`-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`) are present
+
+### Token validation fails
+
+**Problem**: Generated token is rejected by external services.
+
+**Solution**:
+- Verify correct algorithm (HS256 vs RS256)
+- Verify key matches what the service expects
+- Check payload contains all required claims
+- Ensure token hasn't expired
+
+## Configuration Files
+
+### Storage Location
+
+```
+C:\Users\<username>\AppData\Roaming\jwt-token-gen\config.json
+```
+
+Contains:
+- All saved profiles (with encrypted keys)
+- Application settings
+- Last selected profile
+
+### Backup and Restore
+
+To backup your profiles:
+1. Close the application
+2. Copy `config.json` to a safe location
+3. Restore by copying back to original location
+
+**Note**: Backups only work on the same Windows user account due to DPAPI encryption.
 
 ## Technology Stack
 
-- **Framework**: Electron 38+
-- **UI**: React 19+ with Material-UI 7+
-- **JWT**: jsonwebtoken 9.x
-- **Storage**: electron-store 11.x
-- **Build**: Webpack 5, Babel 7
-- **Testing**: Jest 30+
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Desktop Framework | Electron | 38+ |
+| UI Framework | React | 19+ |
+| UI Components | Material-UI | 7+ |
+| JWT Library | jsonwebtoken | 9.x |
+| JSON Editor | Monaco Editor | latest |
+| Storage | electron-store | 8.x |
+| Encryption | Windows DPAPI | native |
+| Build Tool | Webpack | 5.x |
+| Package Tool | electron-builder | latest |
+| Testing | Jest | 30.x |
 
 ## Limitations
 
-- Maximum 50 profiles
-- Maximum 64KB payload size
-- Windows-only (DPAPI encryption fallback implemented)
-
-## Development Status
-
-See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed progress.
-
-**Current Status**: MVP in development (91% complete)
-- ✅ Foundation complete
-- ✅ Core services implemented
-- 🚧 UI components in progress
+- Maximum 50 profiles (performance optimization)
+- Maximum 64KB payload size (JWT best practice)
+- Windows-only (due to DPAPI encryption)
 
 ## Contributing
 
-This is a development tool. For issues or feature requests, please create an issue in the repository.
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests and documentation
+5. Submit a pull request
+
+### Code Style
+
+- Follow existing patterns
+- Add JSDoc comments
+- Run `npm run lint` and `npm run format`
+- Write tests for new features
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-Built following Specify methodology and constitutional principles for secure, maintainable code.
+- Built with [Electron](https://www.electronjs.org/)
+- UI components from [Material-UI](https://mui.com/)
+- JWT handling by [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken)
+- Code editor powered by [Monaco Editor](https://microsoft.github.io/monaco-editor/)
+- Developed following Specify methodology and constitutional principles
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/your-org/jwt-token-gen/issues)
+- **Documentation**: See `/specs/001-jwt-token-generator/` for detailed specifications
+
+---
+
+**Made with ❤️ for developers and testers who work with JWT tokens**

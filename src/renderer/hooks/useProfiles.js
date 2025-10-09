@@ -3,7 +3,15 @@ import ipcService from '../services/ipcService';
 
 /**
  * Custom hook for profile management
- * @returns {Object} Profile state and operations
+ * @returns {Object} Object containing:
+ *   - profiles: Array of all profiles
+ *   - selectedProfile: Currently selected profile object
+ *   - selectProfile: Function to select a profile
+ *   - loadProfiles: Function to reload profiles from storage
+ *   - saveProfile: Function to save a profile
+ *   - deleteProfile: Function to delete a profile
+ *   - loading: Boolean indicating if profiles are loading
+ *   - error: Error message if operation failed
  */
 export function useProfiles() {
   const [profiles, setProfiles] = useState([]);
@@ -15,6 +23,9 @@ export function useProfiles() {
     loadProfiles();
   }, []);
 
+  /**
+   * Load all profiles from storage via IPC
+   */
   async function loadProfiles() {
     try {
       setLoading(true);
@@ -28,12 +39,17 @@ export function useProfiles() {
       }
     } catch (err) {
       setError(err.message);
-      console.error('Failed to load profiles:', err);
+      // Profile loading error stored in state for display
     } finally {
       setLoading(false);
     }
   }
 
+  /**
+   * Save a profile to storage via IPC
+   * @param {Object} profile - The profile object to save
+   * @returns {Promise<Object>} The saved profile
+   */
   async function saveProfile(profile) {
     try {
       setError(null);
@@ -46,6 +62,10 @@ export function useProfiles() {
     }
   }
 
+  /**
+   * Delete a profile from storage via IPC
+   * @param {string} profileId - The ID of the profile to delete
+   */
   async function deleteProfile(profileId) {
     try {
       setError(null);
@@ -62,6 +82,10 @@ export function useProfiles() {
     }
   }
 
+  /**
+   * Select a profile as the current profile
+   * @param {Object} profile - The profile to select
+   */
   function selectProfile(profile) {
     setSelectedProfile(profile);
   }

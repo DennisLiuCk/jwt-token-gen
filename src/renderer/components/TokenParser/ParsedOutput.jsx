@@ -22,11 +22,16 @@ import { formatTimestamp } from '../../utils/format';
 export default function ParsedOutput({ parsedToken }) {
   const { header, payload } = parsedToken;
 
+  /**
+   * Copy a claim value to the clipboard
+   * @param {string} claimName - The name of the claim
+   * @param {any} claimValue - The value of the claim
+   */
   const handleCopyClaim = async (claimName, claimValue) => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(claimValue));
     } catch (error) {
-      console.error('Failed to copy claim:', error);
+      // Clipboard operation failure handled silently
     }
   };
 

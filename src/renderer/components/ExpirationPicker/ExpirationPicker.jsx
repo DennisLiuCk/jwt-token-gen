@@ -38,7 +38,7 @@ export default function ExpirationPicker({
         onCustomTimestampChange(timestamp);
       }
     } catch (error) {
-      console.error('Invalid date:', error);
+      // Invalid date handled by form validation
     }
   };
 

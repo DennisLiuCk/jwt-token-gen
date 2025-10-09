@@ -97,21 +97,21 @@
 
 ### Implementation for User Story 2
 
-- [ ] T046 [P] [US2] Create src/renderer/components/ProfileEditor/ProfileEditorDialog.jsx with Material-UI Dialog for create/edit
-- [ ] T047 [P] [US2] Create src/renderer/components/ProfileEditor/ProfileForm.jsx with TextField inputs for name and algorithm
-- [ ] T048 [US2] Add "New Profile" Button to App.jsx opening ProfileEditorDialog in create mode
-- [ ] T049 [US2] Add "Edit Profile" Button to ProfileList.jsx opening ProfileEditorDialog in edit mode
-- [ ] T050 [US2] Add "Delete Profile" Button to ProfileList.jsx with confirmation Dialog
-- [ ] T051 [US2] Implement profile creation flow: collect data → encrypt key via crypto:encrypt → save via profiles:save IPC
-- [ ] T052 [US2] Implement profile update flow: load profile → modify fields → encrypt new key if changed → save via profiles:save IPC
-- [ ] T053 [US2] Implement profile deletion flow: confirm → delete via profiles:delete IPC → update selected profile if deleted
-- [ ] T054 [US2] Add profile name uniqueness validation in ProfileForm.jsx before saving
-- [ ] T055 [US2] Add profile count validation (max 50) in ProfileForm.jsx showing error when limit reached
-- [ ] T056 [US2] Implement unsaved changes detection in ProfileContext.jsx tracking modification state
-- [ ] T057 [US2] Add unsaved changes warning Dialog when switching profiles with modified data
-- [ ] T058 [US2] Add "Save" and "Discard" buttons to unsaved changes Dialog blocking profile switch until resolved
-- [ ] T059 [US2] Update storage.js to persist lastSelectedProfileId in settings on profile selection
-- [ ] T060 [US2] Update App.jsx to auto-select lastSelectedProfileId on application startup
+- [X] T046 [P] [US2] Create src/renderer/components/ProfileEditor/ProfileEditorDialog.jsx with Material-UI Dialog for create/edit
+- [X] T047 [P] [US2] Create src/renderer/components/ProfileEditor/ProfileForm.jsx with TextField inputs for name and algorithm
+- [X] T048 [US2] Add "New Profile" Button to App.jsx opening ProfileEditorDialog in create mode
+- [X] T049 [US2] Add "Edit Profile" Button to ProfileList.jsx opening ProfileEditorDialog in edit mode
+- [X] T050 [US2] Add "Delete Profile" Button to ProfileList.jsx with confirmation Dialog
+- [X] T051 [US2] Implement profile creation flow: collect data → encrypt key via crypto:encrypt → save via profiles:save IPC
+- [X] T052 [US2] Implement profile update flow: load profile → modify fields → encrypt new key if changed → save via profiles:save IPC
+- [X] T053 [US2] Implement profile deletion flow: confirm → delete via profiles:delete IPC → update selected profile if deleted
+- [X] T054 [US2] Add profile name uniqueness validation in ProfileForm.jsx before saving
+- [X] T055 [US2] Add profile count validation (max 50) in ProfileForm.jsx showing error when limit reached
+- [X] T056 [US2] Implement unsaved changes detection in ProfileContext.jsx tracking modification state
+- [X] T057 [US2] Add unsaved changes warning Dialog when switching profiles with modified data
+- [X] T058 [US2] Add "Save" and "Discard" buttons to unsaved changes Dialog blocking profile switch until resolved
+- [X] T059 [US2] Update storage.js to persist lastSelectedProfileId in settings on profile selection
+- [X] T060 [US2] Update App.jsx to auto-select lastSelectedProfileId on application startup
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - users can manage custom profiles and generate tokens
 
@@ -125,18 +125,18 @@
 
 ### Implementation for User Story 3
 
-- [ ] T061 [US3] Update KeyInput.jsx to show algorithm-specific format hints (Base64 for HS256, PEM for RS256)
-- [ ] T062 [US3] Add key format validation in validationService.js checking Base64 format for HS256 keys
-- [ ] T063 [US3] Add PEM format validation in validationService.js checking BEGIN/END markers for RS256 keys
-- [ ] T064 [US3] Update AlgorithmSelector.jsx onChange to clear key input and show appropriate format hint
-- [ ] T065 [US3] Implement key encryption in ProfileForm.jsx calling crypto:encrypt before saving profile
-- [ ] T066 [US3] Implement key decryption in token generation flow calling crypto:decrypt before signing
-- [ ] T067 [US3] Add key validation error display in KeyInput.jsx for invalid Base64 or PEM formats
-- [ ] T068 [US3] Update jwtService.generateToken to handle both HS256 (Buffer.from Base64) and RS256 (PEM string) key formats
-- [ ] T069 [US3] Add plaintext key memory clearing in jwtService.generateToken after token signing (set to null)
-- [ ] T070 [US3] Update ProfileList.jsx to auto-load encrypted key for selected profile via profiles:get IPC
-- [ ] T071 [US3] Add DPAPI decryption error handling showing "Unable to decrypt key" with re-entry suggestion
-- [ ] T072 [US3] Update storage.js to handle multi-environment keys by storing encryptedKey per profile
+- [X] T061 [US3] Update KeyInput.jsx to show algorithm-specific format hints (Base64 for HS256, PEM for RS256)
+- [X] T062 [US3] Add key format validation in validationService.js checking Base64 format for HS256 keys
+- [X] T063 [US3] Add PEM format validation in validationService.js checking BEGIN/END markers for RS256 keys
+- [X] T064 [US3] Update AlgorithmSelector.jsx onChange to clear key input and show appropriate format hint
+- [X] T065 [US3] Implement key encryption in ProfileForm.jsx calling crypto:encrypt before saving profile
+- [X] T066 [US3] Implement key decryption in token generation flow calling crypto:decrypt before signing
+- [X] T067 [US3] Add key validation error display in KeyInput.jsx for invalid Base64 or PEM formats
+- [X] T068 [US3] Update jwtService.generateToken to handle both HS256 (Buffer.from Base64) and RS256 (PEM string) key formats
+- [X] T069 [US3] Add plaintext key memory clearing in jwtService.generateToken after token signing (set to null)
+- [X] T070 [US3] Update ProfileList.jsx to auto-load encrypted key for selected profile via profiles:get IPC
+- [X] T071 [US3] Add DPAPI decryption error handling showing "Unable to decrypt key" with re-entry suggestion
+- [X] T072 [US3] Update storage.js to handle multi-environment keys by storing encryptedKey per profile
 
 **Checkpoint**: All algorithm and key management features complete - users can work with HS256 and RS256 seamlessly
 
@@ -150,21 +150,21 @@
 
 ### Implementation for User Story 4
 
-- [ ] T073 [P] [US4] Create src/renderer/components/PayloadEditor/PayloadEditor.jsx with Tabs for Form/JSON mode toggle
-- [ ] T074 [P] [US4] Create src/renderer/components/PayloadEditor/FormMode.jsx with TextFields for common claims (userId, username, email, roleCode, etc.)
-- [ ] T075 [P] [US4] Create src/renderer/components/PayloadEditor/JsonMode.jsx integrating Monaco Editor for JSON editing
-- [ ] T076 [US4] Create src/renderer/hooks/usePayload.js managing payload state and real-time form/JSON synchronization with bidirectional updates
-- [ ] T077 [US4] Implement switchToJsonMode() in usePayload.js converting payloadObject to JSON string with JSON.stringify (called on mode switch)
-- [ ] T078 [US4] Implement switchToFormMode() in usePayload.js parsing JSON string with try/catch and error display (called on mode switch)
-- [ ] T078a [US4] Add real-time form-to-payload sync in FormMode.jsx updating payloadObject on every field change (satisfies FR-016)
-- [ ] T079 [US4] Add real-time JSON syntax validation in JsonMode.jsx showing inline error messages for invalid JSON
-- [ ] T080 [US4] Add "Add Custom Field" Button in FormMode.jsx allowing arbitrary field name/value pairs
-- [ ] T081 [US4] Implement custom field addition in usePayload.js updating payloadObject with new field
-- [ ] T082 [US4] Add JSON editor configuration in JsonMode.jsx (Monaco with json language, syntax highlighting, formatOnPaste)
-- [ ] T083 [US4] Add mode switch validation preventing switch from JSON to Form if JSON is invalid
-- [ ] T084 [US4] Update ProfileContext to store payload mode preference (form/json) per profile
-- [ ] T085 [US4] Add payload size validation (64KB limit) before allowing profile save or token generation
-- [ ] T086 [US4] Wire PayloadEditor to App.jsx replacing static payload input with tabbed editor
+- [X] T073 [P] [US4] Create src/renderer/components/PayloadEditor/PayloadEditor.jsx with Tabs for Form/JSON mode toggle
+- [X] T074 [P] [US4] Create src/renderer/components/PayloadEditor/FormMode.jsx with TextFields for common claims (userId, username, email, roleCode, etc.)
+- [X] T075 [P] [US4] Create src/renderer/components/PayloadEditor/JsonMode.jsx integrating Monaco Editor for JSON editing
+- [X] T076 [US4] Create src/renderer/hooks/usePayload.js managing payload state and real-time form/JSON synchronization with bidirectional updates
+- [X] T077 [US4] Implement switchToJsonMode() in usePayload.js converting payloadObject to JSON string with JSON.stringify (called on mode switch)
+- [X] T078 [US4] Implement switchToFormMode() in usePayload.js parsing JSON string with try/catch and error display (called on mode switch)
+- [X] T078a [US4] Add real-time form-to-payload sync in FormMode.jsx updating payloadObject on every field change (satisfies FR-016)
+- [X] T079 [US4] Add real-time JSON syntax validation in JsonMode.jsx showing inline error messages for invalid JSON
+- [X] T080 [US4] Add "Add Custom Field" Button in FormMode.jsx allowing arbitrary field name/value pairs
+- [X] T081 [US4] Implement custom field addition in usePayload.js updating payloadObject with new field
+- [X] T082 [US4] Add JSON editor configuration in JsonMode.jsx (Monaco with json language, syntax highlighting, formatOnPaste)
+- [X] T083 [US4] Add mode switch validation preventing switch from JSON to Form if JSON is invalid
+- [X] T084 [US4] Update ProfileContext to store payload mode preference (form/json) per profile
+- [X] T085 [US4] Add payload size validation (64KB limit) before allowing profile save or token generation
+- [X] T086 [US4] Wire PayloadEditor to App.jsx replacing static payload input with tabbed editor
 
 **Checkpoint**: Dual editing modes functional - users can edit payloads in form or JSON mode with full synchronization
 
@@ -178,17 +178,17 @@
 
 ### Implementation for User Story 5
 
-- [ ] T087 [P] [US5] Create src/renderer/components/TokenParser/TokenParser.jsx with TextField for token input
-- [ ] T088 [P] [US5] Create src/renderer/components/TokenParser/ParsedOutput.jsx displaying decoded header and payload
-- [ ] T089 [US5] Add parseToken() function in jwtService.js using jwt.decode with complete:true option
-- [ ] T090 [US5] Add token format validation in parseToken() checking for three Base64url segments separated by dots
-- [ ] T091 [US5] Implement token parsing on paste/input in TokenParser.jsx calling jwtService.parseToken
-- [ ] T092 [US5] Display algorithm and token type from header in ParsedOutput.jsx
-- [ ] T093 [US5] Display all claims from payload in ParsedOutput.jsx with formatted JSON
-- [ ] T094 [US5] Format timestamp claims (exp, iat, nbf) in ParsedOutput.jsx showing Unix timestamp and human-readable date
-- [ ] T095 [US5] Add malformed token error handling in TokenParser.jsx showing clear error message
-- [ ] T096 [US5] Add copy functionality for individual claim values in ParsedOutput.jsx
-- [ ] T097 [US5] Add TokenParser component to App.jsx in separate section or tab
+- [X] T087 [P] [US5] Create src/renderer/components/TokenParser/TokenParser.jsx with TextField for token input
+- [X] T088 [P] [US5] Create src/renderer/components/TokenParser/ParsedOutput.jsx displaying decoded header and payload
+- [X] T089 [US5] Add parseToken() function in jwtService.js using jwt.decode with complete:true option
+- [X] T090 [US5] Add token format validation in parseToken() checking for three Base64url segments separated by dots
+- [X] T091 [US5] Implement token parsing on paste/input in TokenParser.jsx calling jwtService.parseToken
+- [X] T092 [US5] Display algorithm and token type from header in ParsedOutput.jsx
+- [X] T093 [US5] Display all claims from payload in ParsedOutput.jsx with formatted JSON
+- [X] T094 [US5] Format timestamp claims (exp, iat, nbf) in ParsedOutput.jsx showing Unix timestamp and human-readable date
+- [X] T095 [US5] Add malformed token error handling in TokenParser.jsx showing clear error message
+- [X] T096 [US5] Add copy functionality for individual claim values in ParsedOutput.jsx
+- [X] T097 [US5] Add TokenParser component to App.jsx in separate section or tab
 
 **Checkpoint**: Token parsing complete - users can analyze existing JWT tokens alongside generation
 
@@ -202,15 +202,15 @@
 
 ### Implementation for User Story 6
 
-- [ ] T098 [US6] Update ExpirationPicker.jsx to include "Custom" option in preset dropdown
-- [ ] T099 [US6] Add DateTimePicker input to ExpirationPicker.jsx appearing when "Custom" is selected
-- [ ] T100 [US6] Implement expiration calculation in jwtService.js for presets: "1h"=3600s, "1d"=86400s, "1w"=604800s
-- [ ] T101 [US6] Implement custom expiration timestamp handling in jwtService.js using customExpiration from profile
-- [ ] T102 [US6] Add expiration validation warning if custom time is in the past (allow but warn for testing scenarios)
-- [ ] T103 [US6] Update ProfileForm.jsx to save expirationPreset and customExpiration with profile
-- [ ] T104 [US6] Wire ExpirationPicker to ProfileContext so expiration settings persist with profile
-- [ ] T105 [US6] Display calculated expiration time in human-readable format in ExpirationPicker.jsx
-- [ ] T106 [US6] Add exp claim auto-calculation in jwtService.generateToken based on preset or custom value
+- [X] T098 [US6] Update ExpirationPicker.jsx to include "Custom" option in preset dropdown
+- [X] T099 [US6] Add DateTimePicker input to ExpirationPicker.jsx appearing when "Custom" is selected
+- [X] T100 [US6] Implement expiration calculation in jwtService.js for presets: "1h"=3600s, "1d"=86400s, "1w"=604800s
+- [X] T101 [US6] Implement custom expiration timestamp handling in jwtService.js using customExpiration from profile
+- [X] T102 [US6] Add expiration validation warning if custom time is in the past (allow but warn for testing scenarios)
+- [X] T103 [US6] Update ProfileForm.jsx to save expirationPreset and customExpiration with profile
+- [X] T104 [US6] Wire ExpirationPicker to ProfileContext so expiration settings persist with profile
+- [X] T105 [US6] Display calculated expiration time in human-readable format in ExpirationPicker.jsx
+- [X] T106 [US6] Add exp claim auto-calculation in jwtService.generateToken based on preset or custom value
 
 **Checkpoint**: All expiration features complete - users have full control over token expiration times
 
@@ -220,18 +220,18 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T107 [P] Add comprehensive error handling throughout all components with user-friendly error messages
-- [ ] T108 [P] Add loading states (CircularProgress) for all IPC operations (profile load, save, delete)
-- [ ] T109 [P] Implement keyboard shortcuts: Ctrl+G (Generate Token, global), Ctrl+C (Copy Token, only when token display has focus), Ctrl+S (Save Profile, global), Escape (Close Dialogs, when dialog open)
-- [ ] T110 [P] Add Snackbar notifications for success/error feedback (profile saved, token copied, etc.)
+- [X] T107 [P] Add comprehensive error handling throughout all components with user-friendly error messages
+- [X] T108 [P] Add loading states (CircularProgress) for all IPC operations (profile load, save, delete)
+- [X] T109 [P] Implement keyboard shortcuts: Ctrl+G (Generate Token, global), Ctrl+C (Copy Token, only when token display has focus), Ctrl+S (Save Profile, global), Escape (Close Dialogs, when dialog open)
+- [X] T110 [P] Add Snackbar notifications for success/error feedback (profile saved, token copied, etc.)
 - [ ] T111 [P] Create application icon in public/icons/icon.ico for Windows installer
 - [ ] T112 [P] Add edge case handling: empty profiles list, corrupted config file, clipboard failure, expired tokens
 - [ ] T113 [P] Optimize bundle size: lazy-load Monaco Editor, minimize ASAR package
 - [ ] T114 [P] Add data-testid attributes to all interactive elements for future E2E testing
-- [ ] T115 Code cleanup and refactoring: remove console.logs, ensure consistent naming, add JSDoc comments
-- [ ] T116 Create README.md with application overview, installation, and usage instructions
+- [X] T115 Code cleanup and refactoring: remove console.logs, ensure consistent naming, add JSDoc comments
+- [X] T116 Create README.md with application overview, installation, and usage instructions
 - [ ] T117 Validate application against quickstart.md ensuring all setup steps work
-- [ ] T118 Build production package with electron-builder creating Windows NSIS installer
+- [X] T118 Build production package with electron-builder creating Windows NSIS installer
 - [ ] T119 Manual testing on Windows 10 and Windows 11 environments
 - [ ] T120 Verify DPAPI encryption/decryption works across Windows user accounts
 

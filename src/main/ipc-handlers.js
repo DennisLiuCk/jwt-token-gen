@@ -1,7 +1,17 @@
+/**
+ * IPC Handlers Module
+ * Registers all IPC communication handlers between main and renderer processes.
+ * Handles profile operations, crypto operations, and settings management.
+ */
+
 const { ipcMain } = require('electron');
 const storage = require('./storage');
 const crypto = require('./crypto');
 
+/**
+ * Register all IPC handlers for the application
+ * Should be called once when the app is ready
+ */
 function registerHandlers() {
   // Initialize default profiles on first launch
   storage.initializeDefaultProfiles();
