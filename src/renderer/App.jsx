@@ -9,7 +9,8 @@ import {
   Button,
   Box,
   Alert,
-  Snackbar
+  Snackbar,
+  CircularProgress
 } from '@mui/material';
 import { AppProvider } from './context/AppContext';
 import { ProfileProvider } from './context/ProfileContext';
@@ -18,8 +19,11 @@ import AlgorithmSelector from './components/AlgorithmSelector/AlgorithmSelector'
 import KeyInput from './components/KeyInput/KeyInput';
 import ExpirationPicker from './components/ExpirationPicker/ExpirationPicker';
 import TokenDisplay from './components/TokenDisplay/TokenDisplay';
+import PayloadEditor from './components/PayloadEditor/PayloadEditor';
+import TokenParser from './components/TokenParser/TokenParser';
 import { useProfile } from './context/ProfileContext';
 import { useClipboard } from './hooks/useClipboard';
+import { usePayload } from './hooks/usePayload';
 import { generateToken } from './services/jwtService';
 import { validateKey } from './services/validationService';
 
@@ -27,10 +31,93 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
+      main: '#AB6B2E', // Claude's warm brown
+      light: '#C78850',
+      dark: '#8B5523',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#2D2D2D',
+      light: '#4A4A4A',
+      dark: '#1A1A1A',
+    },
+    background: {
+      default: '#FAFAF8',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#2D2D2D',
+      secondary: '#666666',
+    },
+    divider: '#E8E8E6',
+  },
+  typography: {
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    h4: {
+      fontWeight: 600,
+      fontSize: '1.75rem',
+      letterSpacing: '-0.02em',
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      letterSpacing: '-0.01em',
+    },
+    body1: {
+      fontSize: '0.9375rem',
+      lineHeight: 1.6,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 500,
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  shadows: [
+    'none',
+    '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    ...Array(19).fill('none'),
+  ],
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          padding: '8px 16px',
+          fontSize: '0.9375rem',
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 6,
+          },
+        },
+      },
     },
   },
 });
@@ -42,23 +129,91 @@ function AppContent() {
   const [algorithm, setAlgorithm] = useState('HS256');
   const [key, setKey] = useState('');
   const [expiration, setExpiration] = useState('1h');
+  const [customExpiration, setCustomExpiration] = useState(null);
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Payload editor hook
+  const {
+    payloadObject,
+    jsonString,
+    mode: payloadMode,
+    jsonError,
+    switchToJsonMode,
+    switchToFormMode,
+    updateField,
+    addCustomField,
+    removeField,
+    updateJsonString,
+    resetPayload,
+    getCurrentPayload
+  } = usePayload({});
 
   // Update form when profile changes
   React.useEffect(() => {
     if (selectedProfile) {
       setAlgorithm(selectedProfile.algorithm);
       setExpiration(selectedProfile.expirationPreset || '1h');
-      // Note: We don't set the key from profile as it's encrypted
-      // User must enter it each time for security
+      setCustomExpiration(selectedProfile.customExpiration || null);
+      // Clear key when profile changes for security
+      setKey('');
+      // Load profile payload
+      resetPayload(selectedProfile.payload || {});
     }
-  }, [selectedProfile]);
+  }, [selectedProfile, resetPayload]);
+
+  // Keyboard shortcuts (T109)
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+G: Generate Token
+      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+        e.preventDefault();
+        if (selectedProfile && key) {
+          handleGenerateToken();
+        }
+      }
+
+      // Ctrl+C: Copy Token (when token is displayed)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && generatedToken) {
+        // Let default copy work if text is selected
+        if (!window.getSelection()?.toString()) {
+          e.preventDefault();
+          handleCopyToken(generatedToken.raw);
+        }
+      }
+
+      // Ctrl+S: Save Profile (prevent browser save dialog)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        // Could be extended to save current profile changes
+        setSnackbarOpen(false);
+        setTimeout(() => {
+          setError('Save profile functionality can be accessed via Edit Profile button');
+        }, 100);
+      }
+
+      // Escape: Close dialogs (handled by MUI Dialog components)
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedProfile, key, generatedToken]);
+
+  // Handle algorithm change - clear key and show format hint
+  const handleAlgorithmChange = (newAlgorithm) => {
+    setAlgorithm(newAlgorithm);
+    setKey(''); // Clear key when algorithm changes (T064)
+    setGeneratedToken(null); // Clear any generated token
+  };
 
   const handleGenerateToken = async () => {
     try {
       setError(null);
+      setIsGenerating(true); // Show loading state (T108)
 
       // Validation
       if (!selectedProfile) {
@@ -75,54 +230,115 @@ function AppContent() {
         throw new Error(keyValidation.error);
       }
 
-      // Get payload from selected profile
-      const payload = selectedProfile.payload || {};
+      // Get payload from payload editor
+      const payload = getCurrentPayload();
+      if (!payload) {
+        throw new Error('Invalid payload. Please fix JSON syntax errors.');
+      }
+
+      // Use custom expiration if set, otherwise use preset
+      const expirationValue = expiration === 'custom' && customExpiration
+        ? customExpiration
+        : expiration;
 
       // Generate token
-      const token = generateToken(algorithm, key, payload, expiration);
+      const token = generateToken(algorithm, key, payload, expirationValue);
       setGeneratedToken(token);
+
+      // Show success notification (T110)
+      showNotification('Token generated successfully!', 'success');
 
     } catch (err) {
       setError(err.message);
+      showNotification(err.message, 'error');
       console.error('Token generation error:', err);
+    } finally {
+      setIsGenerating(false);
     }
+  };
+
+  const showNotification = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
   };
 
   const handleCopyToken = async (tokenText) => {
     const success = await copyToClipboard(tokenText);
     if (success) {
-      setSnackbarOpen(true);
+      showNotification('Token copied to clipboard!', 'success');
+    } else {
+      showNotification('Failed to copy token', 'error');
     }
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          JWT Token Generator
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Generate and manage JWT tokens with ease
-        </Typography>
-      </Box>
-
-      <Grid container spacing={3}>
-        {/* Left Sidebar - Profile List */}
-        <Grid item xs={12} md={3}>
-          <ProfileList />
-        </Grid>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="lg" sx={{ py: 5 }}>
+        {/* Header */}
+        <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            sx={{
+              color: 'text.primary',
+              fontWeight: 600,
+              mb: 1,
+              fontSize: '2rem'
+            }}
+          >
+            JWT Token Generator
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ fontSize: '1rem' }}
+          >
+            Generate and manage JWT tokens with ease
+          </Typography>
+        </Box>
 
         {/* Main Content */}
-        <Grid item xs={12} md={9}>
+        <Box>
+          {/* Profile Selector */}
+          <ProfileList compact={true} />
+
           {/* Configuration Panel */}
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper
+            sx={{
+              p: 4,
+              mb: 3,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              boxShadow: 2
+            }}
+          >
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                mb: 3,
+                pb: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+              }}
+            >
               Token Configuration
             </Typography>
 
             {!selectedProfile && (
-              <Alert severity="info" sx={{ mb: 2 }}>
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 3,
+                  borderRadius: 1.5,
+                  '& .MuiAlert-icon': {
+                    color: 'primary.main'
+                  }
+                }}
+              >
                 Select a profile to get started
               </Alert>
             )}
@@ -131,7 +347,7 @@ function AppContent() {
               <Grid item xs={12} md={6}>
                 <AlgorithmSelector
                   value={algorithm}
-                  onChange={setAlgorithm}
+                  onChange={handleAlgorithmChange}
                   disabled={!selectedProfile}
                 />
               </Grid>
@@ -140,6 +356,8 @@ function AppContent() {
                 <ExpirationPicker
                   value={expiration}
                   onChange={setExpiration}
+                  customTimestamp={customExpiration}
+                  onCustomTimestampChange={setCustomExpiration}
                   disabled={!selectedProfile}
                 />
               </Grid>
@@ -155,14 +373,18 @@ function AppContent() {
 
               {selectedProfile && (
                 <Grid item xs={12}>
-                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Payload Preview (from profile: {selectedProfile.name})
-                    </Typography>
-                    <pre style={{ margin: 0, fontSize: '0.875rem', overflow: 'auto' }}>
-                      {JSON.stringify(selectedProfile.payload, null, 2)}
-                    </pre>
-                  </Paper>
+                  <PayloadEditor
+                    payloadObject={payloadObject}
+                    jsonString={jsonString}
+                    mode={payloadMode}
+                    jsonError={jsonError}
+                    onSwitchToForm={switchToFormMode}
+                    onSwitchToJson={switchToJsonMode}
+                    onUpdateField={updateField}
+                    onAddCustomField={addCustomField}
+                    onRemoveField={removeField}
+                    onUpdateJsonString={updateJsonString}
+                  />
                 </Grid>
               )}
 
@@ -172,11 +394,37 @@ function AppContent() {
                   size="large"
                   fullWidth
                   onClick={handleGenerateToken}
-                  disabled={!selectedProfile || !key}
+                  disabled={!selectedProfile || !key || isGenerating}
                   data-testid="generate-button"
+                  startIcon={isGenerating ? <CircularProgress size={20} color="inherit" /> : null}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    mt: 2
+                  }}
                 >
-                  Generate Token
+                  {isGenerating ? 'Generating...' : 'Generate Token'}
                 </Button>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    mt: 1.5,
+                    display: 'block',
+                    textAlign: 'center',
+                    fontSize: '0.8125rem'
+                  }}
+                >
+                  Keyboard shortcut: <Box component="kbd" sx={{
+                    px: 0.75,
+                    py: 0.25,
+                    bgcolor: 'grey.100',
+                    borderRadius: 0.5,
+                    fontSize: '0.75rem',
+                    fontFamily: 'monospace'
+                  }}>Ctrl+G</Box>
+                </Typography>
               </Grid>
 
               {error && (
@@ -194,17 +442,29 @@ function AppContent() {
             token={generatedToken}
             onCopy={handleCopyToken}
           />
-        </Grid>
-      </Grid>
 
-      {/* Snackbar for Copy Feedback */}
+          {/* Token Parser */}
+          <TokenParser />
+        </Box>
+
+      {/* Snackbar for Notifications (T110) */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={2000}
+        autoHideDuration={3000}
         onClose={() => setSnackbarOpen(false)}
-        message="Token copied to clipboard!"
-      />
-    </Container>
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+      </Container>
+    </Box>
   );
 }
 
