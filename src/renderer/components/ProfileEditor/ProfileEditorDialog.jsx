@@ -29,7 +29,11 @@ function ProfileEditorDialog({ open, onClose, onSave, profile, mode = 'create' }
 
   useEffect(() => {
     if (profile && mode === 'edit') {
-      setFormData(profile);
+      // Include the profile's payload when editing
+      setFormData({
+        ...profile,
+        payload: profile.payload || {}
+      });
     } else {
       // Initialize empty form for create mode
       setFormData({
@@ -108,7 +112,7 @@ function ProfileEditorDialog({ open, onClose, onSave, profile, mode = 'create' }
           onClick={handleSave}
           variant="contained"
           color="primary"
-          disabled={!hasChanges}
+          disabled={mode === 'edit' && !hasChanges}
         >
           {mode === 'create' ? 'Create' : 'Save'}
         </Button>

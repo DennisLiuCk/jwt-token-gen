@@ -42,7 +42,7 @@ export default function ProfileList({ compact = false }) {
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState('create');
-  const [editingProfile, setEditingProfile] = useState(null);
+  const [editingProfileId, setEditingProfileId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState(null);
   const [unsavedChangesDialogOpen, setUnsavedChangesDialogOpen] = useState(false);
@@ -79,14 +79,14 @@ export default function ProfileList({ compact = false }) {
 
   const handleNewProfile = () => {
     setEditorMode('create');
-    setEditingProfile(null);
+    setEditingProfileId(null);
     setEditorOpen(true);
   };
 
   const handleEditProfile = (profile, event) => {
     event.stopPropagation(); // Prevent profile selection
     setEditorMode('edit');
-    setEditingProfile(profile);
+    setEditingProfileId(profile.id);
     setEditorOpen(true);
   };
 
@@ -108,8 +108,8 @@ export default function ProfileList({ compact = false }) {
     let result;
     if (editorMode === 'create') {
       result = await createProfile(profileData);
-    } else if (editorMode === 'edit' && editingProfile) {
-      result = await updateProfile(editingProfile.id, profileData);
+    } else if (editorMode === 'edit' && editingProfileId) {
+      result = await updateProfile(editingProfileId, profileData);
     }
 
     if (result) {
@@ -117,6 +117,11 @@ export default function ProfileList({ compact = false }) {
     }
     // Error handling is done in the context
   };
+
+  // Get the current editing profile from the fresh profiles array
+  const editingProfile = editingProfileId
+    ? profiles.find(p => p.id === editingProfileId)
+    : null;
 
   if (loading) {
     return compact ? (

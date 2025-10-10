@@ -159,8 +159,30 @@ function AppContent() {
       setAlgorithm(selectedProfile.algorithm);
       setExpiration(selectedProfile.expirationPreset || '1h');
       setCustomExpiration(selectedProfile.customExpiration || null);
-      // Clear key when profile changes for security
-      setKey('');
+
+      // Load and decrypt the signing key if saved with profile
+      const loadKey = async () => {
+        if (selectedProfile.encryptedKey) {
+          try {
+            const result = await window.electronAPI.decryptKey(selectedProfile.encryptedKey);
+            if (result.success) {
+              setKey(result.data);
+            } else {
+              console.error('Failed to decrypt key:', result.error);
+              setKey('');
+              setError('Failed to load saved key. Please enter it manually.');
+            }
+          } catch (err) {
+            console.error('Error decrypting key:', err);
+            setKey('');
+            setError('Error loading saved key. Please enter it manually.');
+          }
+        } else {
+          setKey('');
+        }
+      };
+      loadKey();
+
       // Load profile payload
       resetPayload(selectedProfile.payload || {});
     }

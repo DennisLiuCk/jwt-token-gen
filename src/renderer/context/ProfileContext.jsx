@@ -124,10 +124,16 @@ export function ProfileProvider({ children }) {
         }
       }
 
+      // Prepare updates object (remove empty/undefined key field)
+      const cleanedUpdates = { ...updates };
+      if (!cleanedUpdates.key) {
+        delete cleanedUpdates.key;
+      }
+
       // Merge updates with existing profile
       const updatedProfile = {
         ...existingProfile,
-        ...updates,
+        ...cleanedUpdates,
         encryptedKey,
         updatedAt: new Date().toISOString()
       };
