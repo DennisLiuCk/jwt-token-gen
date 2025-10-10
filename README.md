@@ -28,7 +28,7 @@
 
 **Prerequisites**: Windows 10 or Windows 11 (x64)
 
-1. Download the latest installer from the [Releases](https://github.com/your-org/jwt-token-gen/releases) page
+1. Download the latest installer from the [Releases](../../releases) page
 2. Run `JWT-Token-Generator-Setup-0.1.0.exe`
 3. Follow the installation wizard
 4. Launch from Start Menu or Desktop shortcut
@@ -39,7 +39,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/jwt-token-gen.git
+git clone <repository-url>
 cd jwt-token-gen
 
 # Install dependencies
@@ -341,7 +341,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/jwt-token-gen/issues)
+- **Issues**: Use GitHub Issues to report bugs or request features
 - **Documentation**: See `/specs/001-jwt-token-generator/` for detailed specifications
 
 ---
