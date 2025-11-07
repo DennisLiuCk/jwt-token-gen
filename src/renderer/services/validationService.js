@@ -178,3 +178,144 @@ export function validateProfileName(name, existingProfiles = [], currentProfileI
 
   return { valid: true, error: null };
 }
+
+/**
+ * Infer the type of a value
+ * @param {*} value - The value to infer type from
+ * @returns {string} Type name: 'string', 'number', 'boolean', 'null', 'object', 'array'
+ */
+export function inferType(value) {
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (typeof value === 'object') {
+    return 'object';
+  }
+  return typeof value; // 'string', 'number', 'boolean', 'undefined', etc.
+}
+
+/**
+ * Validate if a value can be converted to the specified type
+ * @param {*} value - The value to validate
+ * @param {string} type - Target type ('string', 'number', 'boolean', 'null')
+ * @returns {{valid: boolean, error: string|null}} Validation result
+ */
+export function validateValueType(value, type) {
+  if (type === 'null') {
+    return { valid: true, error: null };
+  }
+
+  if (type === 'string') {
+    return { valid: true, error: null };
+  }
+
+  if (type === 'number') {
+    const num = Number(value);
+    if (isNaN(num) && value !== '') {
+      return {
+        valid: false,
+        error: `Cannot convert "${value}" to number`
+      };
+    }
+    return { valid: true, error: null };
+  }
+
+  if (type === 'boolean') {
+    const strValue = String(value).toLowerCase();
+    if (strValue !== 'true' && strValue !== 'false' && strValue !== '0' && strValue !== '1' && strValue !== '') {
+      return {
+        valid: false,
+        error: `Cannot convert "${value}" to boolean. Use: true, false, 0, or 1`
+      };
+    }
+    return { valid: true, error: null };
+  }
+
+  return { valid: false, error: `Unknown type: ${type}` };
+}
+
+/**
+ * Convert a string value to the specified type
+ * @param {string} stringValue - The string value to convert
+ * @param {string} type - Target type ('string', 'number', 'boolean', 'null')
+ * @returns {*} Converted value
+ */
+export function convertStringToType(stringValue, type) {
+  if (type === 'null') {
+    return null;
+  }
+
+  if (type === 'string') {
+    return stringValue;
+  }
+
+  if (type === 'number') {
+    if (stringValue === '' || stringValue === null || stringValue === undefined) {
+      return 0;
+    }
+    const num = Number(stringValue);
+    if (isNaN(num)) {
+      throw new Error(`Cannot convert "${stringValue}" to number`);
+    }
+    return num;
+  }
+
+  if (type === 'boolean') {
+    const strValue = String(stringValue).toLowerCase();
+    if (strValue === 'true' || strValue === '1') {
+      return true;
+    }
+    if (strValue === 'false' || strValue === '0' || strValue === '') {
+      return false;
+    }
+    throw new Error(`Cannot convert "${stringValue}" to boolean`);
+  }
+
+  throw new Error(`Unknown type: ${type}`);
+}
+
+/**
+ * Convert any value to the specified type
+ * @param {*} value - The value to convert
+ * @param {string} type - Target type ('string', 'number', 'boolean', 'null')
+ * @returns {*} Converted value
+ */
+export function convertValue(value, type) {
+  if (type === 'null') {
+    return null;
+  }
+
+  if (type === 'string') {
+    return value === null || value === undefined ? '' : String(value);
+  }
+
+  if (type === 'number') {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+    const num = Number(value);
+    if (isNaN(num)) {
+      throw new Error(`Cannot convert "${value}" to number`);
+    }
+    return num;
+  }
+
+  if (type === 'boolean') {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    const strValue = String(value).toLowerCase();
+    if (strValue === 'true' || strValue === '1') {
+      return true;
+    }
+    if (strValue === 'false' || strValue === '0' || strValue === '') {
+      return false;
+    }
+    throw new Error(`Cannot convert "${value}" to boolean`);
+  }
+
+  throw new Error(`Unknown type: ${type}`);
+}

@@ -143,14 +143,17 @@ function AppContent() {
     jsonString,
     mode: payloadMode,
     jsonError,
+    fieldTypes,
     switchToJsonMode,
     switchToFormMode,
     updateField,
+    updateFieldType,
     addCustomField,
     removeField,
     updateJsonString,
     resetPayload,
-    getCurrentPayload
+    getCurrentPayload,
+    autoConvertNumericStrings
   } = usePayload({});
 
   // Update form when profile changes
@@ -185,8 +188,13 @@ function AppContent() {
 
       // Load profile payload
       resetPayload(selectedProfile.payload || {});
+
+      // Auto-convert numeric strings in loaded profile (migration logic)
+      setTimeout(() => {
+        autoConvertNumericStrings();
+      }, 100);
     }
-  }, [selectedProfile, resetPayload]);
+  }, [selectedProfile]); // FIXED: Only depend on selectedProfile, not the functions
 
   // Keyboard shortcuts (T109)
   React.useEffect(() => {
@@ -400,9 +408,11 @@ function AppContent() {
                     jsonString={jsonString}
                     mode={payloadMode}
                     jsonError={jsonError}
+                    fieldTypes={fieldTypes}
                     onSwitchToForm={switchToFormMode}
                     onSwitchToJson={switchToJsonMode}
                     onUpdateField={updateField}
+                    onUpdateFieldType={updateFieldType}
                     onAddCustomField={addCustomField}
                     onRemoveField={removeField}
                     onUpdateJsonString={updateJsonString}

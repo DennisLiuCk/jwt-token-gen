@@ -14,6 +14,7 @@
 - **Multi-Algorithm Support**: HS256 (HMAC with SHA-256) and RS256 (RSA with SHA-256)
 - **Profile Management**: Save and manage up to 50 token configurations for different environments
 - **Dual Payload Editing**: Switch between intuitive form-based and powerful JSON-based payload editing
+- **Type-Safe Payloads**: Specify data types (String, Number, Boolean, Null) for each claim field with visual type selectors
 - **Secure Key Storage**: Automatic encryption of signing keys using Windows DPAPI
 - **Token Parsing**: Parse and analyze existing JWT tokens with human-readable timestamps
 - **Flexible Expiration**: Configure expiration times with presets (1h, 1d, 1w) or custom timestamps
@@ -124,13 +125,16 @@ Based on the selected algorithm:
 
 **Note**: Keys are automatically encrypted using Windows DPAPI and stored securely.
 
-### 3. Configure the Payload
+### 3. Configure the Payload (with Type Support)
 
 Edit the payload using either:
-- **Form Mode**: Fill in common fields (userId, username, email, roleCode, etc.)
+- **Form Mode**: Fill in common fields with type selectors for each field
+  - Click the colored type dropdown next to each field to choose: **String**, **Number**, **Boolean**, or **Null**
+  - Type selectors appear as color-coded chips (String=green, Number=blue, Boolean=purple, Null=gray)
+  - Values are automatically converted to the selected type when generating tokens
 - **JSON Mode**: Edit as raw JSON with Monaco Editor syntax highlighting
 
-Add custom fields as needed by clicking "Add Custom Field" in form mode.
+Add custom fields as needed by clicking "Add Custom Field" in form mode. Each custom field gets its own type selector.
 
 ### 4. Set Expiration
 
@@ -173,6 +177,46 @@ Choose from preset expiration times or set a custom timestamp:
 3. Confirm deletion
 
 **Warning**: Profile deletion is permanent.
+
+### Using Type Selectors
+
+Each payload field has a type selector that controls how the value is encoded in the JWT:
+
+1. **String** (default) - Text values like "admin001" or "user@example.com"
+   - Stored and encoded as JSON strings with quotes
+   - Use for: usernames, emails, text identifiers, role names
+
+2. **Number** - Numeric values like 123 or 45.67
+   - Automatically converted from text input to numbers
+   - Stored without quotes in the JWT
+   - Use for: user IDs, numeric codes, counts, amounts
+
+3. **Boolean** - True/false values
+   - Accepts "true"/"false" or "1"/"0" in text input
+   - Converted to actual boolean values (true/false)
+   - Use for: feature flags, permissions, enabled/disabled states
+
+4. **Null** - Explicitly null values
+   - Encoded as `null` in JSON
+   - Use for: optional fields that are intentionally empty
+
+**Examples:**
+
+```javascript
+// Field: userId, Value: "123", Type: String
+// JWT payload: {"userId": "123"}  ← quoted string
+
+// Field: userId, Value: "123", Type: Number
+// JWT payload: {"userId": 123}  ← unquoted number
+
+// Field: isAdmin, Value: "true", Type: Boolean
+// JWT payload: {"isAdmin": true}  ← boolean value
+
+// Field: optionalData, Type: Null
+// JWT payload: {"optionalData": null}  ← null value
+```
+
+**Tip:** The type selector only affects the final JWT encoding. You can always edit the text value freely in the input field, and it will be converted when you generate the token.
 
 ### Parsing Existing Tokens
 

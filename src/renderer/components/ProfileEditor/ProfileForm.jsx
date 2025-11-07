@@ -23,6 +23,8 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TypeSelector from '../PayloadEditor/TypeSelector';
+import { inferType, convertValue } from '../../services/validationService';
 
 /**
  * ProfileForm Component
@@ -42,6 +44,29 @@ function ProfileForm({ formData, onChange, mode }) {
   const [addClaimDialogOpen, setAddClaimDialogOpen] = useState(false);
   const [newClaimName, setNewClaimName] = useState('');
   const [newClaimValue, setNewClaimValue] = useState('');
+  const [newClaimType, setNewClaimType] = useState('string');
+
+  // Track field types: infer from current payload values
+  const [fieldTypes, setFieldTypes] = useState(() => {
+    const types = {};
+    if (formData.payload) {
+      Object.keys(formData.payload).forEach(key => {
+        types[key] = inferType(formData.payload[key]);
+      });
+    }
+    return types;
+  });
+
+  // Update fieldTypes when formData.payload changes (e.g., when loading a profile)
+  useEffect(() => {
+    if (formData.payload) {
+      const newTypes = {};
+      Object.keys(formData.payload).forEach(key => {
+        newTypes[key] = inferType(formData.payload[key]);
+      });
+      setFieldTypes(newTypes);
+    }
+  }, [formData.payload]);
 
   useEffect(() => {
     // Load existing profile names and count for validation
@@ -102,6 +127,7 @@ function ProfileForm({ formData, onChange, mode }) {
   };
 
   const handlePayloadFieldChange = (fieldName, value) => {
+    // Store value as-is, no conversion during input
     const updatedPayload = {
       ...(formData.payload || {}),
       [fieldName]: value
@@ -110,6 +136,35 @@ function ProfileForm({ formData, onChange, mode }) {
       ...formData,
       payload: updatedPayload
     });
+  };
+
+  const handlePayloadFieldTypeChange = (fieldName, newType) => {
+    try {
+      const currentValue = formData.payload[fieldName];
+      const convertedValue = convertValue(currentValue, newType);
+
+      const updatedPayload = {
+        ...(formData.payload || {}),
+        [fieldName]: convertedValue
+      };
+
+      setFieldTypes(prev => ({
+        ...prev,
+        [fieldName]: newType
+      }));
+
+      onChange({
+        ...formData,
+        payload: updatedPayload
+      });
+    } catch (error) {
+      console.error(`Failed to convert ${fieldName} to ${newType}:`, error.message);
+      // Update type anyway, keep value as-is
+      setFieldTypes(prev => ({
+        ...prev,
+        [fieldName]: newType
+      }));
+    }
   };
 
   const handleAddClaim = () => {
@@ -137,11 +192,17 @@ function ProfileForm({ formData, onChange, mode }) {
       return;
     }
 
-    // Add the claim
+    // Add the claim - store value as-is, record type metadata
     const updatedPayload = {
       ...(formData.payload || {}),
       [claimName]: newClaimValue
     };
+
+    setFieldTypes(prev => ({
+      ...prev,
+      [claimName]: newClaimType
+    }));
+
     onChange({
       ...formData,
       payload: updatedPayload
@@ -150,12 +211,20 @@ function ProfileForm({ formData, onChange, mode }) {
     // Reset dialog
     setNewClaimName('');
     setNewClaimValue('');
+    setNewClaimType('string');
     setAddClaimDialogOpen(false);
   };
 
   const handleRemoveClaim = (claimName) => {
     const updatedPayload = { ...(formData.payload || {}) };
     delete updatedPayload[claimName];
+
+    setFieldTypes(prev => {
+      const newTypes = { ...prev };
+      delete newTypes[claimName];
+      return newTypes;
+    });
+
     onChange({
       ...formData,
       payload: updatedPayload
@@ -286,11 +355,17 @@ function ProfileForm({ formData, onChange, mode }) {
                     <TextField
                       fullWidth
                       label={claimName}
-                      value={formData.payload[claimName] || ''}
+                      value={formData.payload[claimName] !== undefined ? String(formData.payload[claimName]) : ''}
                       onChange={(e) => handlePayloadFieldChange(claimName, e.target.value)}
                       placeholder={`Value for ${claimName}`}
                       data-testid={`profile-claim-${claimName}`}
                     />
+                    <Box sx={{ mt: 1 }}>
+                      <TypeSelector
+                        value={fieldTypes[claimName] || 'string'}
+                        onChange={(newType) => handlePayloadFieldTypeChange(claimName, newType)}
+                      />
+                    </Box>
                     <IconButton
                       size="small"
                       color="error"
@@ -334,15 +409,23 @@ function ProfileForm({ formData, onChange, mode }) {
               autoFocus
               data-testid="claim-name-input"
             />
-            <TextField
-              label="Claim Value"
-              value={newClaimValue}
-              onChange={(e) => setNewClaimValue(e.target.value)}
-              placeholder="Enter default value"
-              helperText="This value will be used by default when generating tokens"
-              fullWidth
-              data-testid="claim-value-input"
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <TextField
+                label="Claim Value"
+                value={newClaimValue}
+                onChange={(e) => setNewClaimValue(e.target.value)}
+                placeholder="Enter default value"
+                helperText="This value will be used by default when generating tokens"
+                fullWidth
+                data-testid="claim-value-input"
+              />
+              <Box sx={{ mt: 1 }}>
+                <TypeSelector
+                  value={newClaimType}
+                  onChange={setNewClaimType}
+                />
+              </Box>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>

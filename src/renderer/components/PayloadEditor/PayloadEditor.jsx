@@ -20,9 +20,11 @@ export default function PayloadEditor({
   jsonString,
   mode,
   jsonError,
+  fieldTypes,
   onSwitchToForm,
   onSwitchToJson,
   onUpdateField,
+  onUpdateFieldType,
   onAddCustomField,
   onRemoveField,
   onUpdateJsonString
@@ -93,7 +95,9 @@ export default function PayloadEditor({
         {mode === 'form' ? (
           <FormMode
             payload={payloadObject}
+            fieldTypes={fieldTypes}
             onUpdateField={onUpdateField}
+            onUpdateFieldType={onUpdateFieldType}
             onAddCustomField={onAddCustomField}
             onRemoveField={onRemoveField}
           />

@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TypeSelector from './TypeSelector';
 
 /**
  * FormMode Component
@@ -21,10 +22,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
  * Form-based payload editing with common JWT claim fields.
  * Allows adding and removing custom fields.
  */
-export default function FormMode({ payload, onUpdateField, onAddCustomField, onRemoveField }) {
+export default function FormMode({ payload, fieldTypes, onUpdateField, onUpdateFieldType, onAddCustomField, onRemoveField }) {
   const [addFieldDialogOpen, setAddFieldDialogOpen] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldValue, setNewFieldValue] = useState('');
+  const [newFieldType, setNewFieldType] = useState('string');
 
   // Common JWT claim fields
   const commonFields = [
@@ -47,10 +49,11 @@ export default function FormMode({ payload, onUpdateField, onAddCustomField, onR
 
   const handleAddCustomField = () => {
     if (newFieldName && newFieldName.trim() !== '') {
-      const success = onAddCustomField(newFieldName.trim(), newFieldValue);
+      const success = onAddCustomField(newFieldName.trim(), newFieldValue, newFieldType);
       if (success) {
         setNewFieldName('');
         setNewFieldValue('');
+        setNewFieldType('string');
         setAddFieldDialogOpen(false);
       }
     }
@@ -65,14 +68,22 @@ export default function FormMode({ payload, onUpdateField, onAddCustomField, onR
       <Grid container spacing={2}>
         {commonFields.map((field) => (
           <Grid item xs={12} sm={6} key={field.name}>
-            <TextField
-              fullWidth
-              label={field.label}
-              type={field.type}
-              value={payload[field.name] || ''}
-              onChange={(e) => onUpdateField(field.name, e.target.value)}
-              data-testid={`payload-field-${field.name}`}
-            />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <TextField
+                fullWidth
+                label={field.label}
+                type={field.type}
+                value={payload[field.name] !== undefined ? String(payload[field.name]) : ''}
+                onChange={(e) => onUpdateField(field.name, e.target.value)}
+                data-testid={`payload-field-${field.name}`}
+              />
+              <Box sx={{ mt: 1 }}>
+                <TypeSelector
+                  value={fieldTypes[field.name] || 'string'}
+                  onChange={(newType) => onUpdateFieldType(field.name, newType)}
+                />
+              </Box>
+            </Box>
           </Grid>
         ))}
       </Grid>
@@ -106,10 +117,16 @@ export default function FormMode({ payload, onUpdateField, onAddCustomField, onR
                 <TextField
                   fullWidth
                   label={fieldName}
-                  value={payload[fieldName] || ''}
+                  value={payload[fieldName] !== undefined ? String(payload[fieldName]) : ''}
                   onChange={(e) => onUpdateField(fieldName, e.target.value)}
                   data-testid={`custom-field-${fieldName}`}
                 />
+                <Box sx={{ mt: 1 }}>
+                  <TypeSelector
+                    value={fieldTypes[fieldName] || 'string'}
+                    onChange={(newType) => onUpdateFieldType(fieldName, newType)}
+                  />
+                </Box>
                 <IconButton
                   size="small"
                   color="error"
@@ -150,13 +167,21 @@ export default function FormMode({ payload, onUpdateField, onAddCustomField, onR
               fullWidth
               autoFocus
             />
-            <TextField
-              label="Field Value"
-              value={newFieldValue}
-              onChange={(e) => setNewFieldValue(e.target.value)}
-              placeholder="Enter value"
-              fullWidth
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <TextField
+                label="Field Value"
+                value={newFieldValue}
+                onChange={(e) => setNewFieldValue(e.target.value)}
+                placeholder="Enter value"
+                fullWidth
+              />
+              <Box sx={{ mt: 1 }}>
+                <TypeSelector
+                  value={newFieldType}
+                  onChange={setNewFieldType}
+                />
+              </Box>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
