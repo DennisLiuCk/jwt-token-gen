@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import {
@@ -167,6 +167,13 @@ function AppContent() {
     autoConvertNumericStrings,
     applyTemplate
   } = usePayload({});
+
+  // Notification helper (defined early to avoid TDZ issues)
+  const showNotification = useCallback((message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  }, []);
 
   // Update form when profile changes
   React.useEffect(() => {
@@ -352,12 +359,6 @@ function AppContent() {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const showNotification = (message, severity = 'success') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
   };
 
   const handleCopyToken = async (tokenText) => {

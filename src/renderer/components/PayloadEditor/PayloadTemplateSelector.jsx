@@ -78,7 +78,7 @@ export default function PayloadTemplateSelector({ currentPayload, onApplyTemplat
     <>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 2 }}>
         <FormControl fullWidth size="small">
-          <InputLabel id="template-selector-label">Apply Template</InputLabel>
+          <InputLabel id="template-selector-label" shrink={true}>Apply Template</InputLabel>
           <Select
             labelId="template-selector-label"
             value={selectedTemplateId}
@@ -91,6 +91,7 @@ export default function PayloadTemplateSelector({ currentPayload, onApplyTemplat
               }
             }}
             displayEmpty
+            notched
           >
             <MenuItem value="">
               <em>-- Select a template --</em>
