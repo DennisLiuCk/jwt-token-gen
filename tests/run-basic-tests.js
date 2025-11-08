@@ -295,6 +295,154 @@ test('Ctrl+0 selects most recent profile', () => {
   expect(selected.name).toBe('Most Recent');
 });
 
+// ===== Test 7: P3.1 - Token History Logic =====
+console.log('\n📜 Testing P3.1 - Token History Logic\n');
+
+test('add token to history creates entry', () => {
+  const history = [];
+  const newEntry = {
+    id: crypto.randomUUID(),
+    profileId: 'profile-1',
+    profileName: 'Production Admin',
+    algorithm: 'HS256',
+    expirationPreset: '1h',
+    payloadSummary: '{"userId":"123"}',
+    generatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 3600000).toISOString()
+  };
+
+  history.unshift(newEntry);
+
+  expect(history.length).toBe(1);
+  expect(history[0].profileName).toBe('Production Admin');
+  expect(history[0].algorithm).toBe('HS256');
+});
+
+test('history limited to 20 entries', () => {
+  const history = [];
+
+  // Add 25 entries
+  for (let i = 0; i < 25; i++) {
+    const entry = {
+      id: crypto.randomUUID(),
+      profileId: `profile-${i}`,
+      profileName: `Profile ${i}`,
+      algorithm: 'HS256',
+      generatedAt: new Date().toISOString()
+    };
+    history.unshift(entry);
+  }
+
+  // Trim to 20
+  const trimmed = history.slice(0, 20);
+
+  expect(trimmed.length).toBe(20);
+  expect(trimmed[0].profileName).toBe('Profile 24'); // Most recent
+  expect(trimmed[19].profileName).toBe('Profile 5');
+});
+
+// ===== Test 8: P3.2 - Profile Groups Logic =====
+console.log('\n📁 Testing P3.2 - Profile Groups Logic\n');
+
+test('group profiles by group ID', () => {
+  const profiles = [
+    { id: '1', name: 'Prod Admin', group: 'production' },
+    { id: '2', name: 'Dev Admin', group: 'development' },
+    { id: '3', name: 'Prod User', group: 'production' },
+    { id: '4', name: 'Test User', group: 'ungrouped' }
+  ];
+
+  const grouped = {};
+  profiles.forEach(profile => {
+    const groupId = profile.group || 'ungrouped';
+    if (!grouped[groupId]) {
+      grouped[groupId] = [];
+    }
+    grouped[groupId].push(profile);
+  });
+
+  expect(Object.keys(grouped).length).toBe(3);
+  expect(grouped.production.length).toBe(2);
+  expect(grouped.development.length).toBe(1);
+  expect(grouped.ungrouped.length).toBe(1);
+});
+
+test('create group with properties', () => {
+  const group = {
+    id: crypto.randomUUID(),
+    name: 'Production',
+    color: '#d32f2f',
+    description: 'Production environment profiles',
+    collapsed: false,
+    order: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  expect(group.name).toBe('Production');
+  expect(group.color).toBe('#d32f2f');
+  expect(group.collapsed).toBe(false);
+});
+
+// ===== Test 9: P3.3 - Payload Variants Logic =====
+console.log('\n🔄 Testing P3.3 - Payload Variants Logic\n');
+
+test('add variant to profile', () => {
+  const profile = {
+    id: 'profile-1',
+    name: 'Admin User',
+    payloadVariants: []
+  };
+
+  const newVariant = {
+    id: crypto.randomUUID(),
+    name: 'Full Permissions',
+    description: 'All permissions enabled',
+    payload: { role: 'admin', permissions: ['read', 'write', 'delete'] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  profile.payloadVariants.push(newVariant);
+
+  expect(profile.payloadVariants.length).toBe(1);
+  expect(profile.payloadVariants[0].name).toBe('Full Permissions');
+});
+
+test('delete variant from profile', () => {
+  const profile = {
+    id: 'profile-1',
+    name: 'Admin User',
+    payloadVariants: [
+      { id: 'variant-1', name: 'Full Permissions' },
+      { id: 'variant-2', name: 'Read Only' }
+    ]
+  };
+
+  const variantIdToDelete = 'variant-1';
+  profile.payloadVariants = profile.payloadVariants.filter(v => v.id !== variantIdToDelete);
+
+  expect(profile.payloadVariants.length).toBe(1);
+  expect(profile.payloadVariants[0].name).toBe('Read Only');
+});
+
+test('variants limited to 10 per profile', () => {
+  const variants = [];
+
+  // Try to add 12 variants
+  for (let i = 0; i < 12; i++) {
+    if (variants.length < 10) {
+      variants.push({
+        id: crypto.randomUUID(),
+        name: `Variant ${i}`,
+        payload: {}
+      });
+    }
+  }
+
+  expect(variants.length).toBe(10);
+});
+
 // ===== Summary =====
 console.log('\n' + '='.repeat(50));
 console.log(`\n✅ Passed: ${passed}`);

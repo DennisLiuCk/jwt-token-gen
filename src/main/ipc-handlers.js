@@ -166,6 +166,81 @@ function registerHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  // P3.1: Token History operations
+  ipcMain.handle('tokenHistory:load', async () => {
+    try {
+      const history = storage.getAllTokenHistory();
+      return { success: true, data: history };
+    } catch (error) {
+      console.error('Failed to load token history:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('tokenHistory:add', async (event, historyEntry) => {
+    try {
+      const added = storage.addTokenHistory(historyEntry);
+      return { success: true, data: added };
+    } catch (error) {
+      console.error('Failed to add token history:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('tokenHistory:clear', async () => {
+    try {
+      storage.clearTokenHistory();
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to clear token history:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // P3.2: Profile Groups operations
+  ipcMain.handle('profileGroups:load', async () => {
+    try {
+      const groups = storage.getAllProfileGroups();
+      return { success: true, data: groups };
+    } catch (error) {
+      console.error('Failed to load profile groups:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('profileGroups:get', async (event, groupId) => {
+    try {
+      const group = storage.getProfileGroupById(groupId);
+      if (!group) {
+        return { success: false, error: 'Profile group not found' };
+      }
+      return { success: true, data: group };
+    } catch (error) {
+      console.error('Failed to get profile group:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('profileGroups:save', async (event, group) => {
+    try {
+      const saved = storage.saveProfileGroup(group);
+      return { success: true, data: saved };
+    } catch (error) {
+      console.error('Failed to save profile group:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('profileGroups:delete', async (event, groupId) => {
+    try {
+      storage.deleteProfileGroup(groupId);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete profile group:', error);
+      return { success: false, error: error.message };
+    }
+  });
 }
 
 module.exports = { registerHandlers };

@@ -15,11 +15,14 @@ import {
 import { AppProvider } from './context/AppContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { PayloadTemplateProvider } from './context/PayloadTemplateContext';
+import { TokenHistoryProvider } from './context/TokenHistoryContext';
+import { ProfileGroupProvider } from './context/ProfileGroupContext';
 import ProfileList from './components/ProfileList/ProfileList';
 import AlgorithmSelector from './components/AlgorithmSelector/AlgorithmSelector';
 import KeyInput from './components/KeyInput/KeyInput';
 import ExpirationPicker from './components/ExpirationPicker/ExpirationPicker';
 import TokenDisplay from './components/TokenDisplay/TokenDisplay';
+import TokenHistory from './components/TokenDisplay/TokenHistory';
 import PayloadEditor from './components/PayloadEditor/PayloadEditor';
 import TokenParser from './components/TokenParser/TokenParser';
 import { useProfile } from './context/ProfileContext';
@@ -27,6 +30,7 @@ import { useClipboard } from './hooks/useClipboard';
 import { usePayload } from './hooks/usePayload';
 import { generateToken } from './services/jwtService';
 import { validateKey } from './services/validationService';
+import { useTokenHistory } from './context/TokenHistoryContext';
 
 const theme = createTheme({
   palette: {
@@ -131,6 +135,7 @@ function AppContent() {
     duplicateProfile
   } = useProfile();
   const { copyToClipboard, copied } = useClipboard();
+  const { addToHistory } = useTokenHistory();
 
   const [algorithm, setAlgorithm] = useState('HS256');
   const [key, setKey] = useState('');
@@ -311,6 +316,23 @@ function AppContent() {
       // Generate token
       const token = generateToken(algorithm, key, payload, expirationValue);
       setGeneratedToken(token);
+
+      // P3.1: Add to token history
+      if (selectedProfile) {
+        const payloadSummary = JSON.stringify(payload).slice(0, 200);
+        const expiresAt = token.decoded?.payload?.exp
+          ? new Date(token.decoded.payload.exp * 1000).toISOString()
+          : null;
+
+        await addToHistory({
+          profileId: selectedProfile.id,
+          profileName: selectedProfile.name,
+          algorithm: algorithm,
+          expirationPreset: expiration,
+          payloadSummary: payloadSummary,
+          expiresAt: expiresAt
+        });
+      }
 
       // Show success notification (T110)
       showNotification('Token generated successfully!', 'success');
@@ -513,6 +535,18 @@ function AppContent() {
             onCopy={handleCopyToken}
           />
 
+          {/* P3.1: Token History */}
+          <TokenHistory
+            onRegenerate={(config) => {
+              // Switch to the profile and regenerate token
+              const profile = profiles.find(p => p.id === config.profileId);
+              if (profile) {
+                selectProfile(profile);
+                showNotification(`Switched to: ${config.profileName}`, 'info');
+              }
+            }}
+          />
+
           {/* Token Parser */}
           <TokenParser />
         </Box>
@@ -544,9 +578,13 @@ function App() {
       <CssBaseline />
       <AppProvider>
         <ProfileProvider>
-          <PayloadTemplateProvider>
-            <AppContent />
-          </PayloadTemplateProvider>
+          <ProfileGroupProvider>
+            <PayloadTemplateProvider>
+              <TokenHistoryProvider>
+                <AppContent />
+              </TokenHistoryProvider>
+            </PayloadTemplateProvider>
+          </ProfileGroupProvider>
         </ProfileProvider>
       </AppProvider>
     </ThemeProvider>

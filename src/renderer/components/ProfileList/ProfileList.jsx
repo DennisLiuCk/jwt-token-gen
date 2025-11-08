@@ -36,8 +36,11 @@ import ClearIcon from '@mui/icons-material/Clear';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import FolderIcon from '@mui/icons-material/Folder';
 import { useProfile } from '../../context/ProfileContext';
+import { useProfileGroup } from '../../context/ProfileGroupContext';
 import ProfileEditorDialog from '../ProfileEditor/ProfileEditorDialog';
+import ProfileGroupManager from './ProfileGroupManager';
 
 export default function ProfileList({ compact = false }) {
   const {
@@ -55,6 +58,8 @@ export default function ProfileList({ compact = false }) {
     loading
   } = useProfile();
 
+  const { groups, toggleCollapsed } = useProfileGroup();
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState('create');
   const [editingProfileId, setEditingProfileId] = useState(null);
@@ -63,6 +68,7 @@ export default function ProfileList({ compact = false }) {
   const [unsavedChangesDialogOpen, setUnsavedChangesDialogOpen] = useState(false);
   const [pendingProfile, setPendingProfile] = useState(null);
   const [recentProfiles, setRecentProfiles] = useState([]);
+  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,6 +155,21 @@ export default function ProfileList({ compact = false }) {
 
   const nonFavoriteProfiles = useMemo(() => {
     return filteredProfiles.filter(p => !p.isFavorite);
+  }, [filteredProfiles]);
+
+  // P3.2: Group profiles by their group
+  const groupedProfiles = useMemo(() => {
+    const grouped = {};
+
+    filteredProfiles.forEach(profile => {
+      const groupId = profile.group || 'ungrouped';
+      if (!grouped[groupId]) {
+        grouped[groupId] = [];
+      }
+      grouped[groupId].push(profile);
+    });
+
+    return grouped;
   }, [filteredProfiles]);
 
   // Check if any filters are active
@@ -549,6 +570,22 @@ export default function ProfileList({ compact = false }) {
               New
             </Button>
 
+            <IconButton
+              color="default"
+              onClick={() => setGroupManagerOpen(true)}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1.5,
+                '&:hover': {
+                  bgcolor: 'action.hover'
+                }
+              }}
+              title="Manage Profile Groups"
+            >
+              <FolderIcon />
+            </IconButton>
+
             {selectedProfile && (
               <>
                 <IconButton
@@ -942,6 +979,12 @@ export default function ProfileList({ compact = false }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* P3.2: Profile Group Manager Dialog */}
+      <ProfileGroupManager
+        open={groupManagerOpen}
+        onClose={() => setGroupManagerOpen(false)}
+      />
     </>
   );
 }

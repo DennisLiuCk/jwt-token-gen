@@ -25,5 +25,16 @@ window.electronAPI = {
 
   // Settings operations
   getSettings: () => ipcRenderer.invoke('settings:get'),
-  saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings)
+  saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings),
+
+  // P3.1: Token History operations
+  loadTokenHistory: () => ipcRenderer.invoke('tokenHistory:load'),
+  addTokenHistory: (historyEntry) => ipcRenderer.invoke('tokenHistory:add', historyEntry),
+  clearTokenHistory: () => ipcRenderer.invoke('tokenHistory:clear'),
+
+  // P3.2: Profile Groups operations
+  loadProfileGroups: () => ipcRenderer.invoke('profileGroups:load'),
+  getProfileGroup: (groupId) => ipcRenderer.invoke('profileGroups:get', groupId),
+  saveProfileGroup: (group) => ipcRenderer.invoke('profileGroups:save', group),
+  deleteProfileGroup: (groupId) => ipcRenderer.invoke('profileGroups:delete', groupId)
 };
