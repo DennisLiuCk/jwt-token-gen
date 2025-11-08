@@ -101,6 +101,71 @@ function registerHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  // Recent profiles operations
+  ipcMain.handle('profiles:addRecent', async (event, profileId) => {
+    try {
+      const recentIds = storage.addToRecentProfiles(profileId);
+      return { success: true, data: recentIds };
+    } catch (error) {
+      console.error('Failed to add to recent profiles:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('profiles:getRecent', async () => {
+    try {
+      const recentProfiles = storage.getRecentProfiles();
+      return { success: true, data: recentProfiles };
+    } catch (error) {
+      console.error('Failed to get recent profiles:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Payload template operations
+  ipcMain.handle('payloadTemplates:load', async () => {
+    try {
+      const templates = storage.getAllPayloadTemplates();
+      return { success: true, data: templates };
+    } catch (error) {
+      console.error('Failed to load payload templates:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('payloadTemplates:get', async (event, templateId) => {
+    try {
+      const template = storage.getPayloadTemplateById(templateId);
+      if (!template) {
+        return { success: false, error: 'Payload template not found' };
+      }
+      return { success: true, data: template };
+    } catch (error) {
+      console.error('Failed to get payload template:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('payloadTemplates:save', async (event, template) => {
+    try {
+      const saved = storage.savePayloadTemplate(template);
+      return { success: true, data: saved };
+    } catch (error) {
+      console.error('Failed to save payload template:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('payloadTemplates:delete', async (event, templateId) => {
+    try {
+      storage.deletePayloadTemplate(templateId);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete payload template:', error);
+      return { success: false, error: error.message };
+    }
+  });
 }
 
 module.exports = { registerHandlers };

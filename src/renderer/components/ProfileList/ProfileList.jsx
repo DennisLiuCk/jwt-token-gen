@@ -24,6 +24,9 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useProfile } from '../../context/ProfileContext';
 import ProfileEditorDialog from '../ProfileEditor/ProfileEditorDialog';
 
@@ -35,6 +38,9 @@ export default function ProfileList({ compact = false }) {
     createProfile,
     updateProfile,
     deleteProfile,
+    duplicateProfile,
+    toggleFavorite,
+    toggleTemplate,
     hasUnsavedChanges,
     discardChanges,
     loading
@@ -47,6 +53,23 @@ export default function ProfileList({ compact = false }) {
   const [profileToDelete, setProfileToDelete] = useState(null);
   const [unsavedChangesDialogOpen, setUnsavedChangesDialogOpen] = useState(false);
   const [pendingProfile, setPendingProfile] = useState(null);
+  const [recentProfiles, setRecentProfiles] = useState([]);
+
+  // Load recent profiles
+  React.useEffect(() => {
+    loadRecentProfiles();
+  }, [profiles]); // Reload when profiles change
+
+  const loadRecentProfiles = async () => {
+    try {
+      const result = await window.electronAPI.getRecentProfiles();
+      if (result.success) {
+        setRecentProfiles(result.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load recent profiles:', err);
+    }
+  };
 
   const handleSelectProfile = (profile) => {
     if (hasUnsavedChanges) {
@@ -94,6 +117,16 @@ export default function ProfileList({ compact = false }) {
     event.stopPropagation(); // Prevent profile selection
     setProfileToDelete(profile);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDuplicateProfile = async (profile, event) => {
+    event.stopPropagation(); // Prevent profile selection
+    await duplicateProfile(profile.id);
+  };
+
+  const handleToggleFavorite = async (profile, event) => {
+    event.stopPropagation(); // Prevent profile selection
+    await toggleFavorite(profile.id);
   };
 
   const confirmDelete = async () => {
@@ -149,6 +182,35 @@ export default function ProfileList({ compact = false }) {
             boxShadow: 2
           }}
         >
+          {/* Recent Profiles Quick Access */}
+          {recentProfiles.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                🕐 Recent Profiles
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {recentProfiles.slice(0, 5).map((profile) => (
+                  <Button
+                    key={profile.id}
+                    size="small"
+                    variant={selectedProfile?.id === profile.id ? 'contained' : 'outlined'}
+                    onClick={() => handleSelectProfile(profile)}
+                    sx={{
+                      borderRadius: 1.5,
+                      textTransform: 'none',
+                      fontSize: '0.8125rem',
+                      px: 1.5,
+                      py: 0.5
+                    }}
+                  >
+                    {profile.isFavorite && '⭐ '}
+                    {profile.name}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+          )}
+
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
             <FormControl fullWidth>
               <InputLabel id="profile-select-label">Select Profile</InputLabel>
@@ -216,6 +278,38 @@ export default function ProfileList({ compact = false }) {
 
             {selectedProfile && (
               <>
+                <IconButton
+                  color={selectedProfile.isFavorite ? 'warning' : 'default'}
+                  onClick={(e) => handleToggleFavorite(selectedProfile, { stopPropagation: () => {} })}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1.5,
+                    '&:hover': {
+                      bgcolor: 'warning.50'
+                    }
+                  }}
+                  title={selectedProfile.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  data-testid="favorite-profile-button-compact"
+                >
+                  {selectedProfile.isFavorite ? <StarIcon /> : <StarBorderIcon />}
+                </IconButton>
+                <IconButton
+                  color="primary"
+                  onClick={(e) => handleDuplicateProfile(selectedProfile, { stopPropagation: () => {} })}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1.5,
+                    '&:hover': {
+                      bgcolor: 'primary.50'
+                    }
+                  }}
+                  title="Duplicate profile"
+                  data-testid="duplicate-profile-button-compact"
+                >
+                  <ContentCopyIcon />
+                </IconButton>
                 <IconButton
                   color="primary"
                   onClick={(e) => handleEditProfile(selectedProfile, { stopPropagation: () => {} })}
@@ -450,6 +544,36 @@ export default function ProfileList({ compact = false }) {
                   }
                 />
                 <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleToggleFavorite(profile, e)}
+                    data-testid={`favorite-profile-${profile.id}`}
+                    sx={{
+                      color: profile.isFavorite ? 'warning.main' : 'text.secondary',
+                      '&:hover': {
+                        color: 'warning.main',
+                        bgcolor: 'warning.50'
+                      }
+                    }}
+                    title={profile.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {profile.isFavorite ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDuplicateProfile(profile, e)}
+                    data-testid={`duplicate-profile-${profile.id}`}
+                    sx={{
+                      color: 'text.secondary',
+                      '&:hover': {
+                        color: 'primary.main',
+                        bgcolor: 'rgba(171, 107, 46, 0.08)'
+                      }
+                    }}
+                    title="Duplicate profile"
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
                   <IconButton
                     size="small"
                     onClick={(e) => handleEditProfile(profile, e)}

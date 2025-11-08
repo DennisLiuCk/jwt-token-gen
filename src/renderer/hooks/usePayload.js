@@ -229,6 +229,17 @@ export function usePayload(initialPayload = {}) {
   }, [payloadObject, fieldTypes]);
 
   /**
+   * Apply template payload (replaces current payload)
+   */
+  const applyTemplate = useCallback((templatePayload) => {
+    setPayloadObject(templatePayload);
+    setJsonString(JSON.stringify(templatePayload, null, 2));
+    setJsonError(null);
+    // Switch to form mode to show the applied template
+    setMode('form');
+  }, []);
+
+  /**
    * Get current payload (for token generation)
    * Performs type conversion based on fieldTypes metadata
    */
@@ -284,6 +295,7 @@ export function usePayload(initialPayload = {}) {
     // Utility
     resetPayload,
     getCurrentPayload,
-    autoConvertNumericStrings
+    autoConvertNumericStrings,
+    applyTemplate
   };
 }

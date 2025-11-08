@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { AppProvider } from './context/AppContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { PayloadTemplateProvider } from './context/PayloadTemplateContext';
 import ProfileList from './components/ProfileList/ProfileList';
 import AlgorithmSelector from './components/AlgorithmSelector/AlgorithmSelector';
 import KeyInput from './components/KeyInput/KeyInput';
@@ -153,7 +154,8 @@ function AppContent() {
     updateJsonString,
     resetPayload,
     getCurrentPayload,
-    autoConvertNumericStrings
+    autoConvertNumericStrings,
+    applyTemplate
   } = usePayload({});
 
   // Update form when profile changes
@@ -416,6 +418,7 @@ function AppContent() {
                     onAddCustomField={addCustomField}
                     onRemoveField={removeField}
                     onUpdateJsonString={updateJsonString}
+                    onApplyTemplate={applyTemplate}
                   />
                 </Grid>
               )}
@@ -506,7 +509,9 @@ function App() {
       <CssBaseline />
       <AppProvider>
         <ProfileProvider>
-          <AppContent />
+          <PayloadTemplateProvider>
+            <AppContent />
+          </PayloadTemplateProvider>
         </ProfileProvider>
       </AppProvider>
     </ThemeProvider>

@@ -18,7 +18,12 @@ const schema = {
         expirationPreset: { type: 'string', enum: ['1h', '1d', '1w', 'custom'] },
         customExpiration: { type: ['number', 'null'] },
         createdAt: { type: 'string' },
-        updatedAt: { type: 'string' }
+        updatedAt: { type: 'string' },
+        // New fields for enhanced UX
+        isTemplate: { type: 'boolean' },
+        isFavorite: { type: 'boolean' },
+        group: { type: 'string' },
+        lastUsedAt: { type: ['string', 'null'] }
       }
     }
   },
@@ -37,6 +42,27 @@ const schema = {
           width: { type: 'number' },
           height: { type: 'number' }
         }
+      },
+      recentProfileIds: {
+        type: 'array',
+        maxItems: 10,
+        items: { type: 'string' }
+      }
+    }
+  },
+  payloadTemplates: {
+    type: 'array',
+    maxItems: 30,
+    items: {
+      type: 'object',
+      required: ['id', 'name', 'payload', 'createdAt', 'updatedAt'],
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string', minLength: 1, maxLength: 50 },
+        description: { type: 'string', maxLength: 200 },
+        payload: { type: 'object' },
+        createdAt: { type: 'string' },
+        updatedAt: { type: 'string' }
       }
     }
   }
@@ -56,8 +82,13 @@ function initializeDefaultProfiles() {
       lastSelectedProfileId: null,
       version: '1.0.0',
       theme: 'light',
-      windowBounds: null
+      windowBounds: null,
+      recentProfileIds: []
     });
+  }
+
+  if (!store.has('payloadTemplates')) {
+    store.set('payloadTemplates', []);
   }
 }
 
@@ -126,13 +157,94 @@ function getSettings() {
     lastSelectedProfileId: null,
     version: '1.0.0',
     theme: 'light',
-    windowBounds: null
+    windowBounds: null,
+    recentProfileIds: []
   });
 }
 
 function saveSettings(settings) {
   store.set('settings', settings);
   return settings;
+}
+
+// Recent profiles tracking
+function addToRecentProfiles(profileId) {
+  const settings = getSettings();
+  let recentIds = settings.recentProfileIds || [];
+
+  // Remove if already exists
+  recentIds = recentIds.filter(id => id !== profileId);
+
+  // Add to front
+  recentIds.unshift(profileId);
+
+  // Keep only last 10
+  recentIds = recentIds.slice(0, 10);
+
+  settings.recentProfileIds = recentIds;
+  saveSettings(settings);
+  return recentIds;
+}
+
+function getRecentProfiles() {
+  const settings = getSettings();
+  const recentIds = settings.recentProfileIds || [];
+  const profiles = getAllProfiles();
+
+  return recentIds
+    .map(id => profiles.find(p => p.id === id))
+    .filter(p => p !== undefined);
+}
+
+// Payload Template CRUD operations
+function getAllPayloadTemplates() {
+  return store.get('payloadTemplates', []);
+}
+
+function getPayloadTemplateById(templateId) {
+  const templates = getAllPayloadTemplates();
+  return templates.find(t => t.id === templateId);
+}
+
+function savePayloadTemplate(template) {
+  const templates = getAllPayloadTemplates();
+  const now = new Date().toISOString();
+
+  const existingIndex = templates.findIndex(t => t.id === template.id);
+
+  if (existingIndex >= 0) {
+    // Update existing template
+    templates[existingIndex] = {
+      ...template,
+      updatedAt: now
+    };
+  } else {
+    // Create new template
+    if (templates.length >= 30) {
+      throw new Error('Maximum payload template limit (30) reached');
+    }
+    templates.push({
+      id: template.id || uuidv4(),
+      ...template,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+
+  store.set('payloadTemplates', templates);
+  return templates[existingIndex >= 0 ? existingIndex : templates.length - 1];
+}
+
+function deletePayloadTemplate(templateId) {
+  const templates = getAllPayloadTemplates();
+  const filtered = templates.filter(t => t.id !== templateId);
+
+  if (filtered.length === templates.length) {
+    throw new Error('Payload template not found');
+  }
+
+  store.set('payloadTemplates', filtered);
+  return true;
 }
 
 module.exports = {
@@ -142,5 +254,11 @@ module.exports = {
   saveProfile,
   deleteProfile,
   getSettings,
-  saveSettings
+  saveSettings,
+  addToRecentProfiles,
+  getRecentProfiles,
+  getAllPayloadTemplates,
+  getPayloadTemplateById,
+  savePayloadTemplate,
+  deletePayloadTemplate
 };

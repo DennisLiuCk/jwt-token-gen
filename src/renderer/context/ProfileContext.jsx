@@ -175,13 +175,110 @@ export function ProfileProvider({ children }) {
     }
   }
 
-  function selectProfile(profile, force = false) {
+  async function duplicateProfile(profileId) {
+    try {
+      const original = profiles.find(p => p.id === profileId);
+      if (!original) {
+        setError('Profile not found');
+        return null;
+      }
+
+      // Create a copy with new ID and name
+      const newProfile = {
+        ...original,
+        id: crypto.randomUUID(),
+        name: `${original.name} (Copy)`,
+        encryptedKey: '', // Security: don't copy encrypted key
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const result = await window.electronAPI.saveProfile(newProfile);
+      if (result.success) {
+        await loadProfiles();
+        return result.data;
+      } else {
+        setError(result.error);
+        return null;
+      }
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  }
+
+  async function toggleFavorite(profileId) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return false;
+      }
+
+      const updated = {
+        ...profile,
+        isFavorite: !profile.isFavorite
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  }
+
+  async function toggleTemplate(profileId) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return false;
+      }
+
+      const updated = {
+        ...profile,
+        isTemplate: !profile.isTemplate
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  }
+
+  async function selectProfile(profile, force = false) {
     if (hasUnsavedChanges && !force) {
       // Caller should handle showing warning dialog
       return false;
     }
+
     setSelectedProfile(profile);
     setHasUnsavedChanges(false);
+
+    // Track as recently used
+    if (profile && profile.id) {
+      try {
+        await window.electronAPI.addRecentProfile(profile.id);
+      } catch (err) {
+        console.error('Failed to update recent profiles:', err);
+      }
+    }
+
     return true;
   }
 
@@ -197,6 +294,9 @@ export function ProfileProvider({ children }) {
     createProfile,
     updateProfile,
     deleteProfile,
+    duplicateProfile,
+    toggleFavorite,
+    toggleTemplate,
     loading,
     error,
     setError,
