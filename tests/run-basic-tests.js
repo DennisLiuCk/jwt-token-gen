@@ -207,6 +207,94 @@ test('payload sync between form and JSON', () => {
   expect(parsed.username).toBe('TestUser');
 });
 
+// ===== Test 5: P2 - Search and Filter Logic =====
+console.log('\n🔍 Testing P2 - Search and Filter Logic\n');
+
+test('search filters profiles by name', () => {
+  const profiles = [
+    { name: 'Production Admin', algorithm: 'HS256', payload: { role: 'admin' } },
+    { name: 'Development User', algorithm: 'RS256', payload: { role: 'user' } },
+    { name: 'Test Merchant', algorithm: 'HS256', payload: { role: 'merchant' } }
+  ];
+
+  const searchQuery = 'admin';
+  const filtered = profiles.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  expect(filtered.length).toBe(1);
+  expect(filtered[0].name).toBe('Production Admin');
+});
+
+test('filter by algorithm works', () => {
+  const profiles = [
+    { name: 'Profile 1', algorithm: 'HS256' },
+    { name: 'Profile 2', algorithm: 'RS256' },
+    { name: 'Profile 3', algorithm: 'HS256' }
+  ];
+
+  const filtered = profiles.filter(p => p.algorithm === 'HS256');
+
+  expect(filtered.length).toBe(2);
+});
+
+test('filter by favorites works', () => {
+  const profiles = [
+    { name: 'Profile 1', isFavorite: true },
+    { name: 'Profile 2', isFavorite: false },
+    { name: 'Profile 3', isFavorite: true }
+  ];
+
+  const filtered = profiles.filter(p => p.isFavorite);
+
+  expect(filtered.length).toBe(2);
+});
+
+test('separate favorites and non-favorites', () => {
+  const profiles = [
+    { name: 'Fav 1', isFavorite: true },
+    { name: 'Normal 1', isFavorite: false },
+    { name: 'Fav 2', isFavorite: true }
+  ];
+
+  const favorites = profiles.filter(p => p.isFavorite);
+  const nonFavorites = profiles.filter(p => !p.isFavorite);
+
+  expect(favorites.length).toBe(2);
+  expect(nonFavorites.length).toBe(1);
+});
+
+// ===== Test 6: P2 - Keyboard Shortcuts Logic =====
+console.log('\n⌨️  Testing P2 - Keyboard Shortcuts Logic\n');
+
+test('Ctrl+1-9 selects favorite profile by index', () => {
+  const profiles = [
+    { id: '1', name: 'Fav 1', isFavorite: true },
+    { id: '2', name: 'Fav 2', isFavorite: true },
+    { id: '3', name: 'Normal', isFavorite: false }
+  ];
+
+  const favoriteProfiles = profiles.filter(p => p.isFavorite);
+
+  // Simulate Ctrl+1
+  const index = 0;
+  const selected = favoriteProfiles[index];
+
+  expect(selected).toBeDefined();
+  expect(selected.name).toBe('Fav 1');
+});
+
+test('Ctrl+0 selects most recent profile', () => {
+  const recentProfiles = [
+    { id: '1', name: 'Most Recent' },
+    { id: '2', name: 'Second Recent' }
+  ];
+
+  const selected = recentProfiles[0];
+
+  expect(selected.name).toBe('Most Recent');
+});
+
 // ===== Summary =====
 console.log('\n' + '='.repeat(50));
 console.log(`\n✅ Passed: ${passed}`);

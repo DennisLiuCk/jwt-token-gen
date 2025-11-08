@@ -124,7 +124,12 @@ const theme = createTheme({
 });
 
 function AppContent() {
-  const { selectedProfile } = useProfile();
+  const {
+    selectedProfile,
+    profiles,
+    selectProfile,
+    duplicateProfile
+  } = useProfile();
   const { copyToClipboard, copied } = useClipboard();
 
   const [algorithm, setAlgorithm] = useState('HS256');
@@ -198,7 +203,7 @@ function AppContent() {
     }
   }, [selectedProfile]); // FIXED: Only depend on selectedProfile, not the functions
 
-  // Keyboard shortcuts (T109)
+  // Keyboard shortcuts (P1 + P2 enhancements)
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl+G: Generate Token
@@ -218,14 +223,44 @@ function AppContent() {
         }
       }
 
+      // P2: Ctrl+1-9: Quick switch to favorite profiles
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const index = parseInt(e.key) - 1;
+        const favoriteProfiles = profiles.filter(p => p.isFavorite);
+        if (favoriteProfiles[index]) {
+          selectProfile(favoriteProfiles[index]);
+          showNotification(`Switched to: ${favoriteProfiles[index].name}`, 'info');
+        }
+      }
+
+      // P2: Ctrl+0: Switch to most recent profile
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        window.electronAPI.getRecentProfiles().then(result => {
+          if (result.success && result.data && result.data.length > 0) {
+            selectProfile(result.data[0]);
+            showNotification(`Switched to recent: ${result.data[0].name}`, 'info');
+          }
+        });
+      }
+
+      // P2: Ctrl+D: Duplicate current profile
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        if (selectedProfile) {
+          duplicateProfile(selectedProfile.id).then(newProfile => {
+            if (newProfile) {
+              showNotification(`Duplicated: ${newProfile.name}`, 'success');
+            }
+          });
+        }
+      }
+
       // Ctrl+S: Save Profile (prevent browser save dialog)
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        // Could be extended to save current profile changes
-        setSnackbarOpen(false);
-        setTimeout(() => {
-          setError('Save profile functionality can be accessed via Edit Profile button');
-        }, 100);
+        setError('Save profile functionality can be accessed via Edit Profile button');
       }
 
       // Escape: Close dialogs (handled by MUI Dialog components)
@@ -233,7 +268,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProfile, key, generatedToken]);
+  }, [selectedProfile, key, generatedToken, profiles, selectProfile, duplicateProfile]);
 
   // Handle algorithm change - clear key and show format hint
   const handleAlgorithmChange = (newAlgorithm) => {
