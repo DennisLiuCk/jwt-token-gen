@@ -177,17 +177,14 @@ test('template limit enforcement', () => {
 console.log('\n🔄 Testing Payload Apply Template\n');
 
 test('apply template sets payload and switches mode', () => {
-  let payloadObject = {};
-  let mode = 'json';
-
   const templatePayload = {
     userId: 'admin-001',
     username: 'Admin User'
   };
 
   // Simulate applyTemplate
-  payloadObject = templatePayload;
-  mode = 'form';
+  const payloadObject = templatePayload;
+  const mode = 'form';
 
   expect(payloadObject).toEqual(templatePayload);
   expect(mode).toBe('form');

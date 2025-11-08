@@ -242,23 +242,33 @@ function AppContent() {
       // P2: Ctrl+0: Switch to most recent profile
       if ((e.ctrlKey || e.metaKey) && e.key === '0') {
         e.preventDefault();
-        window.electronAPI.getRecentProfiles().then(result => {
-          if (result.success && result.data && result.data.length > 0) {
-            selectProfile(result.data[0]);
-            showNotification(`Switched to recent: ${result.data[0].name}`, 'info');
-          }
-        });
+        window.electronAPI.getRecentProfiles()
+          .then(result => {
+            if (result.success && result.data && result.data.length > 0) {
+              selectProfile(result.data[0]);
+              showNotification(`Switched to recent: ${result.data[0].name}`, 'info');
+            }
+          })
+          .catch(err => {
+            console.error('Failed to get recent profiles:', err);
+            showNotification('Failed to switch to recent profile', 'error');
+          });
       }
 
       // P2: Ctrl+D: Duplicate current profile
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         if (selectedProfile) {
-          duplicateProfile(selectedProfile.id).then(newProfile => {
-            if (newProfile) {
-              showNotification(`Duplicated: ${newProfile.name}`, 'success');
-            }
-          });
+          duplicateProfile(selectedProfile.id)
+            .then(newProfile => {
+              if (newProfile) {
+                showNotification(`Duplicated: ${newProfile.name}`, 'success');
+              }
+            })
+            .catch(err => {
+              console.error('Failed to duplicate profile:', err);
+              showNotification('Failed to duplicate profile', 'error');
+            });
         }
       }
 
@@ -273,7 +283,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProfile, key, generatedToken, profiles, selectProfile, duplicateProfile]);
+  }, [selectedProfile, key, generatedToken, profiles, selectProfile, duplicateProfile, showNotification]);
 
   // Handle algorithm change - clear key and show format hint
   const handleAlgorithmChange = (newAlgorithm) => {
@@ -318,21 +328,19 @@ function AppContent() {
       setGeneratedToken(token);
 
       // P3.1: Add to token history
-      if (selectedProfile) {
-        const payloadSummary = JSON.stringify(payload).slice(0, 200);
-        const expiresAt = token.decoded?.payload?.exp
-          ? new Date(token.decoded.payload.exp * 1000).toISOString()
-          : null;
+      const payloadSummary = JSON.stringify(payload).slice(0, 200);
+      const expiresAt = token.decoded?.payload?.exp
+        ? new Date(token.decoded.payload.exp * 1000).toISOString()
+        : null;
 
-        await addToHistory({
-          profileId: selectedProfile.id,
-          profileName: selectedProfile.name,
-          algorithm: algorithm,
-          expirationPreset: expiration,
-          payloadSummary: payloadSummary,
-          expiresAt: expiresAt
-        });
-      }
+      await addToHistory({
+        profileId: selectedProfile.id,
+        profileName: selectedProfile.name,
+        algorithm: algorithm,
+        expirationPreset: expiration,
+        payloadSummary: payloadSummary,
+        expiresAt: expiresAt
+      });
 
       // Show success notification (T110)
       showNotification('Token generated successfully!', 'success');

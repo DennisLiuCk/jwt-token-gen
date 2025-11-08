@@ -80,13 +80,6 @@ export default function ProfileList({ compact = false }) {
     showTemplatesOnly: false
   });
 
-  // Section collapse state
-  const [sectionsExpanded, setSectionsExpanded] = useState({
-    favorites: true,
-    recent: true,
-    all: true
-  });
-
   // Search input ref for Ctrl+F
   const searchInputRef = useRef(null);
 
@@ -157,21 +150,6 @@ export default function ProfileList({ compact = false }) {
     return filteredProfiles.filter(p => !p.isFavorite);
   }, [filteredProfiles]);
 
-  // P3.2: Group profiles by their group
-  const groupedProfiles = useMemo(() => {
-    const grouped = {};
-
-    filteredProfiles.forEach(profile => {
-      const groupId = profile.group || 'ungrouped';
-      if (!grouped[groupId]) {
-        grouped[groupId] = [];
-      }
-      grouped[groupId].push(profile);
-    });
-
-    return grouped;
-  }, [filteredProfiles]);
-
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
     return activeFilters.algorithm !== null ||
@@ -188,13 +166,6 @@ export default function ProfileList({ compact = false }) {
       showFavoritesOnly: false,
       showTemplatesOnly: false
     });
-  };
-
-  const toggleSection = (section) => {
-    setSectionsExpanded(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
   };
 
   const handleSelectProfile = (profile) => {
@@ -233,25 +204,33 @@ export default function ProfileList({ compact = false }) {
   };
 
   const handleEditProfile = (profile, event) => {
-    event.stopPropagation(); // Prevent profile selection
+    if (event && event.stopPropagation) {
+      event.stopPropagation(); // Prevent profile selection
+    }
     setEditorMode('edit');
     setEditingProfileId(profile.id);
     setEditorOpen(true);
   };
 
   const handleDeleteProfile = (profile, event) => {
-    event.stopPropagation(); // Prevent profile selection
+    if (event && event.stopPropagation) {
+      event.stopPropagation(); // Prevent profile selection
+    }
     setProfileToDelete(profile);
     setDeleteDialogOpen(true);
   };
 
   const handleDuplicateProfile = async (profile, event) => {
-    event.stopPropagation(); // Prevent profile selection
+    if (event && event.stopPropagation) {
+      event.stopPropagation(); // Prevent profile selection
+    }
     await duplicateProfile(profile.id);
   };
 
   const handleToggleFavorite = async (profile, event) => {
-    event.stopPropagation(); // Prevent profile selection
+    if (event && event.stopPropagation) {
+      event.stopPropagation(); // Prevent profile selection
+    }
     await toggleFavorite(profile.id);
   };
 
@@ -590,7 +569,7 @@ export default function ProfileList({ compact = false }) {
               <>
                 <IconButton
                   color={selectedProfile.isFavorite ? 'warning' : 'default'}
-                  onClick={(e) => handleToggleFavorite(selectedProfile, { stopPropagation: () => {} })}
+                  onClick={() => handleToggleFavorite(selectedProfile)}
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
@@ -606,7 +585,7 @@ export default function ProfileList({ compact = false }) {
                 </IconButton>
                 <IconButton
                   color="primary"
-                  onClick={(e) => handleDuplicateProfile(selectedProfile, { stopPropagation: () => {} })}
+                  onClick={() => handleDuplicateProfile(selectedProfile)}
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
@@ -622,7 +601,7 @@ export default function ProfileList({ compact = false }) {
                 </IconButton>
                 <IconButton
                   color="primary"
-                  onClick={(e) => handleEditProfile(selectedProfile, { stopPropagation: () => {} })}
+                  onClick={() => handleEditProfile(selectedProfile)}
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
@@ -637,7 +616,7 @@ export default function ProfileList({ compact = false }) {
                 </IconButton>
                 <IconButton
                   color="error"
-                  onClick={(e) => handleDeleteProfile(selectedProfile, { stopPropagation: () => {} })}
+                  onClick={() => handleDeleteProfile(selectedProfile)}
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
