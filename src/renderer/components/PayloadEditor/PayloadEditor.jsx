@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import FormMode from './FormMode';
 import JsonMode from './JsonMode';
+import PayloadTemplateSelector from './PayloadTemplateSelector';
 
 /**
  * PayloadEditor Component
@@ -27,7 +28,8 @@ export default function PayloadEditor({
   onUpdateFieldType,
   onAddCustomField,
   onRemoveField,
-  onUpdateJsonString
+  onUpdateJsonString,
+  onApplyTemplate
 }) {
   const [tabValue, setTabValue] = React.useState(mode === 'form' ? 0 : 1);
 
@@ -47,6 +49,12 @@ export default function PayloadEditor({
       // Switching from Form to JSON
       onSwitchToJson();
       setTabValue(1);
+    }
+  };
+
+  const handleApplyTemplate = (templatePayload) => {
+    if (onApplyTemplate) {
+      onApplyTemplate(templatePayload);
     }
   };
 
@@ -79,19 +87,26 @@ export default function PayloadEditor({
         </Tabs>
       </Box>
 
-      {jsonError && mode === 'json' && (
-        <Alert
-          severity="error"
-          sx={{
-            m: 2,
-            borderRadius: 1.5
-          }}
-        >
-          {jsonError}
-        </Alert>
-      )}
+      <Box sx={{ p: 3, pt: 2 }}>
+        {/* Payload Template Selector */}
+        <PayloadTemplateSelector
+          currentPayload={payloadObject}
+          onApplyTemplate={handleApplyTemplate}
+        />
 
-      <Box sx={{ p: 3 }}>
+        {jsonError && mode === 'json' && (
+          <Alert
+            severity="error"
+            sx={{
+              mb: 2,
+              borderRadius: 1.5
+            }}
+          >
+            {jsonError}
+          </Alert>
+        )}
+
+        {/* Payload Editor Modes */}
         {mode === 'form' ? (
           <FormMode
             payload={payloadObject}

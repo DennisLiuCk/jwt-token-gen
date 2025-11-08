@@ -14,11 +14,15 @@ import {
 } from '@mui/material';
 import { AppProvider } from './context/AppContext';
 import { ProfileProvider } from './context/ProfileContext';
+import { PayloadTemplateProvider } from './context/PayloadTemplateContext';
+import { TokenHistoryProvider } from './context/TokenHistoryContext';
+import { ProfileGroupProvider } from './context/ProfileGroupContext';
 import ProfileList from './components/ProfileList/ProfileList';
 import AlgorithmSelector from './components/AlgorithmSelector/AlgorithmSelector';
 import KeyInput from './components/KeyInput/KeyInput';
 import ExpirationPicker from './components/ExpirationPicker/ExpirationPicker';
 import TokenDisplay from './components/TokenDisplay/TokenDisplay';
+import TokenHistory from './components/TokenDisplay/TokenHistory';
 import PayloadEditor from './components/PayloadEditor/PayloadEditor';
 import TokenParser from './components/TokenParser/TokenParser';
 import { useProfile } from './context/ProfileContext';
@@ -26,6 +30,7 @@ import { useClipboard } from './hooks/useClipboard';
 import { usePayload } from './hooks/usePayload';
 import { generateToken } from './services/jwtService';
 import { validateKey } from './services/validationService';
+import { useTokenHistory } from './context/TokenHistoryContext';
 
 const theme = createTheme({
   palette: {
@@ -123,8 +128,14 @@ const theme = createTheme({
 });
 
 function AppContent() {
-  const { selectedProfile } = useProfile();
+  const {
+    selectedProfile,
+    profiles,
+    selectProfile,
+    duplicateProfile
+  } = useProfile();
   const { copyToClipboard, copied } = useClipboard();
+  const { addToHistory } = useTokenHistory();
 
   const [algorithm, setAlgorithm] = useState('HS256');
   const [key, setKey] = useState('');
@@ -153,7 +164,8 @@ function AppContent() {
     updateJsonString,
     resetPayload,
     getCurrentPayload,
-    autoConvertNumericStrings
+    autoConvertNumericStrings,
+    applyTemplate
   } = usePayload({});
 
   // Update form when profile changes
@@ -196,7 +208,7 @@ function AppContent() {
     }
   }, [selectedProfile]); // FIXED: Only depend on selectedProfile, not the functions
 
-  // Keyboard shortcuts (T109)
+  // Keyboard shortcuts (P1 + P2 enhancements)
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl+G: Generate Token
@@ -216,14 +228,54 @@ function AppContent() {
         }
       }
 
+      // P2: Ctrl+1-9: Quick switch to favorite profiles
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const index = parseInt(e.key) - 1;
+        const favoriteProfiles = profiles.filter(p => p.isFavorite);
+        if (favoriteProfiles[index]) {
+          selectProfile(favoriteProfiles[index]);
+          showNotification(`Switched to: ${favoriteProfiles[index].name}`, 'info');
+        }
+      }
+
+      // P2: Ctrl+0: Switch to most recent profile
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        window.electronAPI.getRecentProfiles()
+          .then(result => {
+            if (result.success && result.data && result.data.length > 0) {
+              selectProfile(result.data[0]);
+              showNotification(`Switched to recent: ${result.data[0].name}`, 'info');
+            }
+          })
+          .catch(err => {
+            console.error('Failed to get recent profiles:', err);
+            showNotification('Failed to switch to recent profile', 'error');
+          });
+      }
+
+      // P2: Ctrl+D: Duplicate current profile
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        if (selectedProfile) {
+          duplicateProfile(selectedProfile.id)
+            .then(newProfile => {
+              if (newProfile) {
+                showNotification(`Duplicated: ${newProfile.name}`, 'success');
+              }
+            })
+            .catch(err => {
+              console.error('Failed to duplicate profile:', err);
+              showNotification('Failed to duplicate profile', 'error');
+            });
+        }
+      }
+
       // Ctrl+S: Save Profile (prevent browser save dialog)
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        // Could be extended to save current profile changes
-        setSnackbarOpen(false);
-        setTimeout(() => {
-          setError('Save profile functionality can be accessed via Edit Profile button');
-        }, 100);
+        setError('Save profile functionality can be accessed via Edit Profile button');
       }
 
       // Escape: Close dialogs (handled by MUI Dialog components)
@@ -231,7 +283,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProfile, key, generatedToken]);
+  }, [selectedProfile, key, generatedToken, profiles, selectProfile, duplicateProfile, showNotification]);
 
   // Handle algorithm change - clear key and show format hint
   const handleAlgorithmChange = (newAlgorithm) => {
@@ -274,6 +326,21 @@ function AppContent() {
       // Generate token
       const token = generateToken(algorithm, key, payload, expirationValue);
       setGeneratedToken(token);
+
+      // P3.1: Add to token history
+      const payloadSummary = JSON.stringify(payload).slice(0, 200);
+      const expiresAt = token.decoded?.payload?.exp
+        ? new Date(token.decoded.payload.exp * 1000).toISOString()
+        : null;
+
+      await addToHistory({
+        profileId: selectedProfile.id,
+        profileName: selectedProfile.name,
+        algorithm: algorithm,
+        expirationPreset: expiration,
+        payloadSummary: payloadSummary,
+        expiresAt: expiresAt
+      });
 
       // Show success notification (T110)
       showNotification('Token generated successfully!', 'success');
@@ -416,6 +483,7 @@ function AppContent() {
                     onAddCustomField={addCustomField}
                     onRemoveField={removeField}
                     onUpdateJsonString={updateJsonString}
+                    onApplyTemplate={applyTemplate}
                   />
                 </Grid>
               )}
@@ -475,6 +543,18 @@ function AppContent() {
             onCopy={handleCopyToken}
           />
 
+          {/* P3.1: Token History */}
+          <TokenHistory
+            onRegenerate={(config) => {
+              // Switch to the profile and regenerate token
+              const profile = profiles.find(p => p.id === config.profileId);
+              if (profile) {
+                selectProfile(profile);
+                showNotification(`Switched to: ${config.profileName}`, 'info');
+              }
+            }}
+          />
+
           {/* Token Parser */}
           <TokenParser />
         </Box>
@@ -506,7 +586,13 @@ function App() {
       <CssBaseline />
       <AppProvider>
         <ProfileProvider>
-          <AppContent />
+          <ProfileGroupProvider>
+            <PayloadTemplateProvider>
+              <TokenHistoryProvider>
+                <AppContent />
+              </TokenHistoryProvider>
+            </PayloadTemplateProvider>
+          </ProfileGroupProvider>
         </ProfileProvider>
       </AppProvider>
     </ThemeProvider>

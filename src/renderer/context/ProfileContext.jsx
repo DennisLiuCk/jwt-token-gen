@@ -175,13 +175,226 @@ export function ProfileProvider({ children }) {
     }
   }
 
-  function selectProfile(profile, force = false) {
+  async function duplicateProfile(profileId) {
+    try {
+      const original = profiles.find(p => p.id === profileId);
+      if (!original) {
+        setError('Profile not found');
+        return null;
+      }
+
+      // Create a copy with new ID and name
+      const newProfile = {
+        ...original,
+        id: crypto.randomUUID(),
+        name: `${original.name} (Copy)`,
+        encryptedKey: '', // Security: don't copy encrypted key
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const result = await window.electronAPI.saveProfile(newProfile);
+      if (result.success) {
+        await loadProfiles();
+        return result.data;
+      } else {
+        setError(result.error);
+        return null;
+      }
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  }
+
+  async function toggleFavorite(profileId) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return false;
+      }
+
+      const updated = {
+        ...profile,
+        isFavorite: !profile.isFavorite
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  }
+
+  async function toggleTemplate(profileId) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return false;
+      }
+
+      const updated = {
+        ...profile,
+        isTemplate: !profile.isTemplate
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  }
+
+  // P3.3: Payload Variant Management
+  async function addPayloadVariant(profileId, variantData) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return null;
+      }
+
+      const variants = profile.payloadVariants || [];
+
+      if (variants.length >= 10) {
+        setError('Maximum payload variant limit (10) reached for this profile');
+        return null;
+      }
+
+      const newVariant = {
+        id: crypto.randomUUID(),
+        name: variantData.name,
+        description: variantData.description || '',
+        payload: variantData.payload || {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const updated = {
+        ...profile,
+        payloadVariants: [...variants, newVariant]
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return newVariant;
+      } else {
+        setError(result.error);
+        return null;
+      }
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  }
+
+  async function updatePayloadVariant(profileId, variantId, updates) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return null;
+      }
+
+      const variants = profile.payloadVariants || [];
+      const variantIndex = variants.findIndex(v => v.id === variantId);
+
+      if (variantIndex === -1) {
+        setError('Variant not found');
+        return null;
+      }
+
+      const updatedVariants = [...variants];
+      updatedVariants[variantIndex] = {
+        ...updatedVariants[variantIndex],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      const updated = {
+        ...profile,
+        payloadVariants: updatedVariants
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return updatedVariants[variantIndex];
+      } else {
+        setError(result.error);
+        return null;
+      }
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  }
+
+  async function deletePayloadVariant(profileId, variantId) {
+    try {
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) {
+        setError('Profile not found');
+        return false;
+      }
+
+      const variants = profile.payloadVariants || [];
+      const updatedVariants = variants.filter(v => v.id !== variantId);
+
+      const updated = {
+        ...profile,
+        payloadVariants: updatedVariants
+      };
+
+      const result = await window.electronAPI.saveProfile(updated);
+      if (result.success) {
+        await loadProfiles();
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  }
+
+  async function selectProfile(profile, force = false) {
     if (hasUnsavedChanges && !force) {
       // Caller should handle showing warning dialog
       return false;
     }
+
     setSelectedProfile(profile);
     setHasUnsavedChanges(false);
+
+    // Track as recently used
+    if (profile && profile.id) {
+      try {
+        await window.electronAPI.addRecentProfile(profile.id);
+      } catch (err) {
+        console.error('Failed to update recent profiles:', err);
+      }
+    }
+
     return true;
   }
 
@@ -197,6 +410,13 @@ export function ProfileProvider({ children }) {
     createProfile,
     updateProfile,
     deleteProfile,
+    duplicateProfile,
+    toggleFavorite,
+    toggleTemplate,
+    // P3.3: Payload Variants
+    addPayloadVariant,
+    updatePayloadVariant,
+    deletePayloadVariant,
     loading,
     error,
     setError,
