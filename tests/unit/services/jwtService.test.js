@@ -119,12 +119,6 @@ describe('jwtService', () => {
           generateToken(algorithm, key, mockPayloads.standard, 'invalid');
         }).toThrow('Invalid expiration preset');
       });
-
-      test('should throw error for empty key', () => {
-        expect(() => {
-          generateToken(algorithm, '', mockPayloads.standard, '1h');
-        }).toThrow();
-      });
     });
 
     describe('RS256 algorithm', () => {

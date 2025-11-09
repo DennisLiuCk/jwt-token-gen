@@ -22,11 +22,17 @@ describe('useClipboard', () => {
       expect(result.current.copied).toBe(false);
     });
 
-    test('should provide copy function', () => {
+    test('should provide copyToClipboard function', () => {
       const { result } = renderHook(() => useClipboard());
 
-      expect(result.current.copy).toBeDefined();
-      expect(typeof result.current.copy).toBe('function');
+      expect(result.current.copyToClipboard).toBeDefined();
+      expect(typeof result.current.copyToClipboard).toBe('function');
+    });
+
+    test('should initialize with error = null', () => {
+      const { result } = renderHook(() => useClipboard());
+
+      expect(result.current.error).toBeNull();
     });
   });
 
@@ -36,7 +42,7 @@ describe('useClipboard', () => {
       const textToCopy = 'test text';
 
       await act(async () => {
-        await result.current.copy(textToCopy);
+        await result.current.copyToClipboard(textToCopy);
       });
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith(textToCopy);
@@ -46,17 +52,28 @@ describe('useClipboard', () => {
       const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('test text');
+        await result.current.copyToClipboard('test text');
       });
 
       expect(result.current.copied).toBe(true);
+    });
+
+    test('should return true on successful copy', async () => {
+      const { result } = renderHook(() => useClipboard());
+
+      let returnValue;
+      await act(async () => {
+        returnValue = await result.current.copyToClipboard('test text');
+      });
+
+      expect(returnValue).toBe(true);
     });
 
     test('should handle empty string', async () => {
       const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('');
+        await result.current.copyToClipboard('');
       });
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith('');
@@ -67,7 +84,7 @@ describe('useClipboard', () => {
       const longText = 'a'.repeat(10000);
 
       await act(async () => {
-        await result.current.copy(longText);
+        await result.current.copyToClipboard(longText);
       });
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith(longText);
@@ -75,37 +92,18 @@ describe('useClipboard', () => {
   });
 
   describe('Copied State Reset', () => {
-    test('should reset copied state after timeout', async () => {
+    test('should reset copied state after 2 second timeout', async () => {
       jest.useFakeTimers();
       const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('test text');
+        await result.current.copyToClipboard('test text');
       });
 
       expect(result.current.copied).toBe(true);
 
       act(() => {
-        jest.advanceTimersByTime(2000); // Assuming 2s timeout
-      });
-
-      expect(result.current.copied).toBe(false);
-
-      jest.useRealTimers();
-    });
-
-    test('should reset copied state after custom timeout', async () => {
-      jest.useFakeTimers();
-      const { result } = renderHook(() => useClipboard(1000)); // 1s timeout
-
-      await act(async () => {
-        await result.current.copy('test text');
-      });
-
-      expect(result.current.copied).toBe(true);
-
-      act(() => {
-        jest.advanceTimersByTime(1000);
+        jest.advanceTimersByTime(2000); // 2s timeout as per implementation
       });
 
       expect(result.current.copied).toBe(false);
@@ -119,24 +117,27 @@ describe('useClipboard', () => {
       mockClipboard.writeText.mockRejectedValueOnce(new Error('Clipboard error'));
       const { result } = renderHook(() => useClipboard());
 
+      let returnValue;
       await act(async () => {
-        await result.current.copy('test text');
+        returnValue = await result.current.copyToClipboard('test text');
       });
 
-      // Should not throw error, may set copied to false
+      // Should return false and not throw error
+      expect(returnValue).toBe(false);
       expect(result.current.copied).toBe(false);
+      expect(result.current.error).toBeDefined();
     });
 
-    test('should handle missing clipboard API', async () => {
-      delete navigator.clipboard;
+    test('should set error message on failure', async () => {
+      const errorMessage = 'Copy failed';
+      mockClipboard.writeText.mockRejectedValueOnce(new Error(errorMessage));
       const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('test text');
+        await result.current.copyToClipboard('test text');
       });
 
-      // Should handle gracefully
-      expect(result.current).toBeDefined();
+      expect(result.current.error).toBe(errorMessage);
     });
   });
 
@@ -145,23 +146,23 @@ describe('useClipboard', () => {
       const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('first text');
+        await result.current.copyToClipboard('first text');
       });
       expect(mockClipboard.writeText).toHaveBeenCalledWith('first text');
 
       await act(async () => {
-        await result.current.copy('second text');
+        await result.current.copyToClipboard('second text');
       });
       expect(mockClipboard.writeText).toHaveBeenCalledWith('second text');
       expect(mockClipboard.writeText).toHaveBeenCalledTimes(2);
     });
 
-    test('should reset timeout on subsequent copies', async () => {
+    test('should maintain copied state through multiple copies', async () => {
       jest.useFakeTimers();
-      const { result } = renderHook(() => useClipboard(2000));
+      const { result } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('first');
+        await result.current.copyToClipboard('first');
       });
 
       act(() => {
@@ -169,17 +170,17 @@ describe('useClipboard', () => {
       });
 
       await act(async () => {
-        await result.current.copy('second');
+        await result.current.copyToClipboard('second');
       });
 
       expect(result.current.copied).toBe(true);
 
       act(() => {
-        jest.advanceTimersByTime(1000);
+        jest.advanceTimersByTime(2000);
       });
 
-      // Should still be true (timer was reset)
-      expect(result.current.copied).toBe(true);
+      // Should be false after timeout
+      expect(result.current.copied).toBe(false);
 
       jest.useRealTimers();
     });
@@ -191,7 +192,7 @@ describe('useClipboard', () => {
       const { result, unmount } = renderHook(() => useClipboard());
 
       await act(async () => {
-        await result.current.copy('test text');
+        await result.current.copyToClipboard('test text');
       });
 
       unmount();

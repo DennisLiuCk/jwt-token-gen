@@ -1,6 +1,6 @@
 /**
  * Unit tests for usePayload hook
- * Tests payload management functionality
+ * Tests payload management functionality with form/JSON mode switching
  */
 
 import { renderHook, act } from '@testing-library/react';
@@ -13,40 +13,36 @@ describe('usePayload', () => {
     test('should initialize with empty payload', () => {
       const { result } = renderHook(() => usePayload());
 
-      expect(result.current.payload).toEqual({});
+      expect(result.current.payloadObject).toEqual({});
+      expect(result.current.mode).toBe('form');
+      expect(result.current.jsonError).toBeNull();
     });
 
     test('should initialize with provided initial payload', () => {
       const initialPayload = mockPayloads.standard;
       const { result } = renderHook(() => usePayload(initialPayload));
 
-      expect(result.current.payload).toEqual(initialPayload);
+      expect(result.current.payloadObject).toEqual(initialPayload);
     });
 
-    test('should provide updatePayload function', () => {
-      const { result } = renderHook(() => usePayload());
+    test('should initialize JSON string from initial payload', () => {
+      const initialPayload = { sub: 'test' };
+      const { result } = renderHook(() => usePayload(initialPayload));
 
-      expect(result.current.updatePayload).toBeDefined();
-      expect(typeof result.current.updatePayload).toBe('function');
-    });
-
-    test('should provide resetPayload function', () => {
-      const { result } = renderHook(() => usePayload());
-
-      expect(result.current.resetPayload).toBeDefined();
-      expect(typeof result.current.resetPayload).toBe('function');
+      const expectedJson = JSON.stringify(initialPayload, null, 2);
+      expect(result.current.jsonString).toBe(expectedJson);
     });
   });
 
-  describe('Update Payload', () => {
-    test('should update payload with new field', () => {
+  describe('Form Mode - Update Operations', () => {
+    test('should update payload object with new fields', () => {
       const { result } = renderHook(() => usePayload());
 
       act(() => {
-        result.current.updatePayload({ sub: '1234567890' });
+        result.current.updatePayloadObject({ sub: '1234567890' });
       });
 
-      expect(result.current.payload).toEqual({ sub: '1234567890' });
+      expect(result.current.payloadObject).toEqual({ sub: '1234567890' });
     });
 
     test('should merge new fields with existing payload', () => {
@@ -54,54 +50,45 @@ describe('usePayload', () => {
       const { result } = renderHook(() => usePayload(initialPayload));
 
       act(() => {
-        result.current.updatePayload({ name: 'Test User' });
+        result.current.updatePayloadObject({ name: 'Test User' });
       });
 
-      expect(result.current.payload).toEqual({
+      expect(result.current.payloadObject).toEqual({
         sub: '1234567890',
         name: 'Test User',
       });
     });
 
-    test('should override existing fields', () => {
-      const initialPayload = { sub: '1234567890', name: 'Old Name' };
-      const { result } = renderHook(() => usePayload(initialPayload));
+    test('should update individual field', () => {
+      const { result } = renderHook(() => usePayload({ sub: 'old' }));
 
       act(() => {
-        result.current.updatePayload({ name: 'New Name' });
+        result.current.updateField('sub', 'new');
       });
 
-      expect(result.current.payload).toEqual({
-        sub: '1234567890',
-        name: 'New Name',
-      });
+      expect(result.current.payloadObject.sub).toBe('new');
     });
 
-    test('should handle nested objects', () => {
+    test('should add custom field', () => {
       const { result } = renderHook(() => usePayload());
 
       act(() => {
-        result.current.updatePayload({
-          user: { id: '123', name: 'Test' },
-        });
+        result.current.addCustomField('customField', 'customValue', 'string');
       });
 
-      expect(result.current.payload.user).toEqual({
-        id: '123',
-        name: 'Test',
-      });
+      expect(result.current.payloadObject.customField).toBe('customValue');
+      expect(result.current.fieldTypes.customField).toBe('string');
     });
 
-    test('should handle arrays', () => {
-      const { result } = renderHook(() => usePayload());
+    test('should remove field', () => {
+      const { result } = renderHook(() => usePayload({ sub: 'test', name: 'Test' }));
 
       act(() => {
-        result.current.updatePayload({
-          roles: ['user', 'admin'],
-        });
+        result.current.removeField('name');
       });
 
-      expect(result.current.payload.roles).toEqual(['user', 'admin']);
+      expect(result.current.payloadObject).toEqual({ sub: 'test' });
+      expect(result.current.fieldTypes.name).toBeUndefined();
     });
   });
 
@@ -114,158 +101,176 @@ describe('usePayload', () => {
         result.current.resetPayload();
       });
 
-      expect(result.current.payload).toEqual({});
+      expect(result.current.payloadObject).toEqual({});
     });
 
     test('should reset payload to provided default', () => {
       const defaultPayload = { sub: 'default' };
-      const { result } = renderHook(() => usePayload());
-
-      act(() => {
-        result.current.updatePayload(mockPayloads.admin);
-      });
+      const { result } = renderHook(() => usePayload(mockPayloads.admin));
 
       act(() => {
         result.current.resetPayload(defaultPayload);
       });
 
-      expect(result.current.payload).toEqual(defaultPayload);
+      expect(result.current.payloadObject).toEqual(defaultPayload);
     });
   });
 
-  describe('Payload Validation', () => {
-    test('should validate payload is an object', () => {
-      const { result } = renderHook(() => usePayload());
+  describe('Mode Switching', () => {
+    test('should switch to JSON mode', () => {
+      const { result } = renderHook(() => usePayload({ sub: 'test' }));
 
-      expect(typeof result.current.payload).toBe('object');
-      expect(Array.isArray(result.current.payload)).toBe(false);
+      act(() => {
+        result.current.switchToJsonMode();
+      });
+
+      expect(result.current.mode).toBe('json');
+      expect(result.current.jsonString).toContain('"sub"');
+      expect(result.current.jsonString).toContain('"test"');
     });
 
-    test('should handle null values in payload', () => {
+    test('should switch to Form mode from valid JSON', () => {
       const { result } = renderHook(() => usePayload());
 
       act(() => {
-        result.current.updatePayload({ value: null });
+        result.current.updateJsonString('{"sub": "test"}');
       });
 
-      expect(result.current.payload.value).toBeNull();
+      act(() => {
+        const success = result.current.switchToFormMode();
+        expect(success).toBe(true);
+      });
+
+      expect(result.current.mode).toBe('form');
+      expect(result.current.payloadObject).toEqual({ sub: 'test' });
+      expect(result.current.jsonError).toBeNull();
     });
 
-    test('should handle undefined values in payload', () => {
+    test('should not switch to Form mode with invalid JSON', () => {
       const { result } = renderHook(() => usePayload());
 
       act(() => {
-        result.current.updatePayload({ value: undefined });
+        result.current.switchToJsonMode();
+        result.current.updateJsonString('invalid json');
       });
 
-      // Undefined values may be included or excluded based on implementation
-      expect(result.current.payload).toBeDefined();
+      act(() => {
+        const success = result.current.switchToFormMode();
+        expect(success).toBe(false);
+      });
+
+      expect(result.current.mode).toBe('json');
+      expect(result.current.jsonError).toBeDefined();
     });
   });
 
-  describe('JSON Mode', () => {
-    test('should convert payload to JSON string', () => {
-      const { result } = renderHook(() => usePayload(mockPayloads.standard));
-
-      const json = JSON.stringify(result.current.payload, null, 2);
-
-      expect(json).toContain('"sub"');
-      expect(json).toContain('"name"');
-    });
-
-    test('should parse JSON string to payload', () => {
+  describe('JSON Mode Operations', () => {
+    test('should update JSON string', () => {
       const { result } = renderHook(() => usePayload());
-      const jsonString = JSON.stringify(mockPayloads.standard);
 
       act(() => {
-        const parsed = JSON.parse(jsonString);
-        result.current.updatePayload(parsed);
+        result.current.updateJsonString('{"field": "value"}');
       });
 
-      expect(result.current.payload).toEqual(mockPayloads.standard);
+      expect(result.current.jsonString).toBe('{"field": "value"}');
+    });
+
+    test('should validate JSON and set error for invalid JSON', () => {
+      const { result } = renderHook(() => usePayload());
+
+      act(() => {
+        result.current.updateJsonString('{invalid}');
+      });
+
+      expect(result.current.jsonError).toBeDefined();
+    });
+
+    test('should clear error for valid JSON', () => {
+      const { result } = renderHook(() => usePayload());
+
+      act(() => {
+        result.current.updateJsonString('{invalid}');
+      });
+
+      expect(result.current.jsonError).toBeDefined();
+
+      act(() => {
+        result.current.updateJsonString('{"valid": true}');
+      });
+
+      expect(result.current.jsonError).toBeNull();
     });
   });
 
-  describe('Complex Payload Updates', () => {
-    test('should handle multiple rapid updates', () => {
-      const { result } = renderHook(() => usePayload());
+  describe('Get Current Payload', () => {
+    test('should return current payload object in form mode', () => {
+      const { result } = renderHook(() => usePayload({ sub: 'test' }));
 
-      act(() => {
-        result.current.updatePayload({ field1: 'value1' });
-        result.current.updatePayload({ field2: 'value2' });
-        result.current.updatePayload({ field3: 'value3' });
-      });
+      const payload = result.current.getCurrentPayload();
 
-      expect(result.current.payload).toEqual({
-        field1: 'value1',
-        field2: 'value2',
-        field3: 'value3',
-      });
+      expect(payload).toEqual({ sub: 'test' });
     });
 
-    test('should handle large payload objects', () => {
+    test('should return parsed JSON in JSON mode', () => {
       const { result } = renderHook(() => usePayload());
-      const largePayload = {};
-      for (let i = 0; i < 100; i++) {
-        largePayload[`field${i}`] = `value${i}`;
-      }
 
       act(() => {
-        result.current.updatePayload(largePayload);
+        result.current.updateJsonString('{"sub": "test"}');
+        result.current.switchToJsonMode();
       });
 
-      expect(Object.keys(result.current.payload)).toHaveLength(100);
+      const payload = result.current.getCurrentPayload();
+
+      expect(payload).toEqual({ sub: 'test' });
+    });
+
+    test('should return null for invalid JSON in JSON mode', () => {
+      const { result } = renderHook(() => usePayload());
+
+      act(() => {
+        result.current.switchToJsonMode();
+        result.current.updateJsonString('invalid');
+      });
+
+      const payload = result.current.getCurrentPayload();
+
+      expect(payload).toBeNull();
     });
   });
 
-  describe('Edge Cases', () => {
-    test('should handle empty object update', () => {
-      const initialPayload = mockPayloads.standard;
-      const { result } = renderHook(() => usePayload(initialPayload));
+  describe('Apply Template', () => {
+    test('should apply template payload', () => {
+      const { result } = renderHook(() => usePayload());
+      const template = { sub: 'template', name: 'Template User' };
 
       act(() => {
-        result.current.updatePayload({});
+        result.current.applyTemplate(template);
       });
 
-      expect(result.current.payload).toEqual(initialPayload);
+      expect(result.current.payloadObject).toEqual(template);
+      expect(result.current.mode).toBe('form');
+    });
+  });
+
+  describe('Field Types', () => {
+    test('should track field types', () => {
+      const payload = { name: 'test', count: 42, active: true };
+      const { result } = renderHook(() => usePayload(payload));
+
+      expect(result.current.fieldTypes.name).toBe('string');
+      expect(result.current.fieldTypes.count).toBe('number');
+      expect(result.current.fieldTypes.active).toBe('boolean');
     });
 
-    test('should handle special characters in field names', () => {
-      const { result } = renderHook(() => usePayload());
+    test('should update field type', () => {
+      const { result } = renderHook(() => usePayload({ count: '42' }));
 
       act(() => {
-        result.current.updatePayload({
-          'field-with-dashes': 'value',
-          'field.with.dots': 'value',
-          'field_with_underscores': 'value',
-        });
+        result.current.updateFieldType('count', 'number');
       });
 
-      expect(result.current.payload['field-with-dashes']).toBe('value');
-      expect(result.current.payload['field.with.dots']).toBe('value');
-      expect(result.current.payload['field_with_underscores']).toBe('value');
-    });
-
-    test('should handle boolean values', () => {
-      const { result } = renderHook(() => usePayload());
-
-      act(() => {
-        result.current.updatePayload({ isActive: true, isDeleted: false });
-      });
-
-      expect(result.current.payload.isActive).toBe(true);
-      expect(result.current.payload.isDeleted).toBe(false);
-    });
-
-    test('should handle numeric values', () => {
-      const { result } = renderHook(() => usePayload());
-
-      act(() => {
-        result.current.updatePayload({ count: 42, price: 19.99 });
-      });
-
-      expect(result.current.payload.count).toBe(42);
-      expect(result.current.payload.price).toBe(19.99);
+      expect(result.current.fieldTypes.count).toBe('number');
+      expect(typeof result.current.payloadObject.count).toBe('number');
     });
   });
 });

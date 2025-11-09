@@ -16,6 +16,11 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
 
+  // Transform ES modules from node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!uuid)',
+  ],
+
   // Test matching patterns
   testMatch: [
     '**/tests/unit/**/*.test.js',
@@ -43,7 +48,7 @@ module.exports = {
   ],
 
   // Coverage thresholds (enforce minimum coverage)
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       statements: 60,
       branches: 50,
