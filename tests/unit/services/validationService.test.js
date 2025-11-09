@@ -149,12 +149,11 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCo
         expect(result.error).toBeDefined();
       });
 
-      test.skip('should handle numeric key gracefully', () => {
-        // TODO: The service currently throws when key is not a string
-        // This reveals a bug that should be fixed in the implementation
+      test('should handle numeric key gracefully', () => {
         const result = validateKey(12345, 'HS256');
 
         expect(result.valid).toBe(false);
+        expect(result.error).toContain('must be a string');
       });
 
       test('should reject key with surrounding whitespace', () => {
