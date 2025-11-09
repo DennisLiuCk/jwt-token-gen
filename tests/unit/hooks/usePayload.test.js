@@ -215,8 +215,10 @@ describe('usePayload', () => {
       const { result } = renderHook(() => usePayload());
 
       act(() => {
-        result.current.updateJsonString('{"sub": "test"}');
+        // First switch to JSON mode (converts empty object to JSON)
         result.current.switchToJsonMode();
+        // Then update the JSON string in JSON mode
+        result.current.updateJsonString('{"sub": "test"}');
       });
 
       const payload = result.current.getCurrentPayload();

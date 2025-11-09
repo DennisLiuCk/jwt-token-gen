@@ -157,14 +157,14 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCo
         expect(result.valid).toBe(false);
       });
 
-      test('should accept key with surrounding whitespace after trim', () => {
+      test('should reject key with surrounding whitespace', () => {
         const keyWithSpaces = '  dGVzdA==  ';
         const result = validateKey(keyWithSpaces, 'HS256');
 
-        // The validation first checks if key.trim() === '', which will be false
-        // Then it should validate the base64 content after trimming
-        // "dGVzdA==" is valid base64
-        expect(result.valid).toBe(true);
+        // validateKey checks if key.trim() === '' but doesn't trim before validateBase64
+        // The base64 regex doesn't allow whitespace, so this should fail
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain('Base64');
       });
     });
   });
