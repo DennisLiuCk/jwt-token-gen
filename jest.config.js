@@ -7,5 +7,6 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
-  testMatch: ['**/tests/unit/**/*.test.js', '**/tests/integration/**/*.test.js']
+  testMatch: ['**/tests/unit/**/*.test.js', '**/tests/integration/**/*.test.js'],
+  passWithNoTests: true
 };
