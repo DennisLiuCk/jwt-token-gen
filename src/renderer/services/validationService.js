@@ -5,6 +5,11 @@
  * @returns {{valid: boolean, error: string|null}} Validation result
  */
 export function validateKey(key, algorithm) {
+  // Type check: ensure key is a string
+  if (typeof key !== 'string') {
+    return { valid: false, error: 'Key must be a string' };
+  }
+
   if (!key || key.trim() === '') {
     return { valid: false, error: 'Key cannot be empty' };
   }
